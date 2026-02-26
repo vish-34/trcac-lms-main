@@ -32,7 +32,7 @@ export default function Lectures() {
 
             const res = await axios.get(
 
-                "http://localhost:5000/api/lecture/all"
+                `${import.meta.env.VITE_API_URL}/api/lecture/all`
 
             );
 
@@ -68,7 +68,7 @@ export default function Lectures() {
 
             await axios.delete(
 
-                `http://localhost:5000/api/lecture/delete/${id}`
+                `${import.meta.env.VITE_API_URL}/api/lecture/delete/${id}`
 
             );
 

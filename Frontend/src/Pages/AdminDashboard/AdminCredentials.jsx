@@ -24,8 +24,8 @@ export default function AdminCredentials() {
 
       const endpoint =
         activeTab === "teacher"
-          ? "http://localhost:5000/api/admin/teachers"
-          : "http://localhost:5000/api/admin/students";
+          ? `${import.meta.env.VITE_API_URL}/api/admin/teachers`
+          : `${import.meta.env.VITE_API_URL}/api/admin/students`;
 
       const res = await fetch(endpoint, {
         headers: {
@@ -84,8 +84,8 @@ export default function AdminCredentials() {
     try {
       const endpoint =
         activeTab === "teacher"
-          ? `http://localhost:5000/api/admin/teachers/${userId}`
-          : `http://localhost:5000/api/admin/students/${userId}`;
+          ? `${import.meta.env.VITE_API_URL}/api/admin/teachers/${userId}`
+          : `${import.meta.env.VITE_API_URL}/api/admin/students/${userId}`;
 
       const res = await fetch(endpoint, {
         method: "DELETE",

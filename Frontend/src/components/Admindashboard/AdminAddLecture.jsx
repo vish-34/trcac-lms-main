@@ -2,345 +2,345 @@ import { useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 
-export default function AdminAddLecture(){
+export default function AdminAddLecture() {
 
-const [form,setForm]=useState({
+    const [form, setForm] = useState({
 
-title:"",
-className:"",
-subject:"",
-facultyName:"",   // ✅ NEW
-youtubeLink:""
+        title: "",
+        className: "",
+        subject: "",
+        facultyName: "",   // ✅ NEW
+        youtubeLink: ""
 
-});
+    });
 
-const [loading,setLoading]=useState(false);
+    const [loading, setLoading] = useState(false);
 
-const [message,setMessage]=useState("");
+    const [message, setMessage] = useState("");
 
 
-// HANDLE CHANGE
+    // HANDLE CHANGE
 
-const handleChange=(e)=>{
+    const handleChange = (e) => {
 
-setForm({
+        setForm({
 
-...form,
-[e.target.name]:e.target.value
+            ...form,
+            [e.target.name]: e.target.value
 
-});
+        });
 
-};
+    };
 
 
-// SUBMIT
+    // SUBMIT
 
-const handleSubmit = async(e)=>{
+    const handleSubmit = async (e) => {
 
-e.preventDefault();
+        e.preventDefault();
 
-setLoading(true);
+        setLoading(true);
 
-try{
+        try {
 
-await axios.post(
+            await axios.post(
 
-"http://localhost:5000/api/lecture/add",
+                `${import.meta.env.VITE_API_URL}/api/lecture/add`,
 
-form
+                form
 
-);
+            );
 
-setMessage("Lecture Added Successfully ✅");
+            setMessage("Lecture Added Successfully ✅");
 
 
-setForm({
+            setForm({
 
-title:"",
-className:"",
-subject:"",
-facultyName:"",
-youtubeLink:""
+                title: "",
+                className: "",
+                subject: "",
+                facultyName: "",
+                youtubeLink: ""
 
-});
+            });
 
-}
-catch(error){
+        }
+        catch (error) {
 
-console.log(error);
+            console.log(error);
 
-setMessage("Error adding lecture ❌");
+            setMessage("Error adding lecture ❌");
 
-}
-finally{
+        }
+        finally {
 
-setLoading(false);
+            setLoading(false);
 
-}
+        }
 
-};
+    };
 
 
 
-return(
+    return (
 
-<div className="space-y-8">
+        <div className="space-y-8">
 
 
-{/* HEADER */}
+            {/* HEADER */}
 
-<motion.div
+            <motion.div
 
-initial={{opacity:0,y:20}}
+                initial={{ opacity: 0, y: 20 }}
 
-animate={{opacity:1,y:0}}
+                animate={{ opacity: 1, y: 0 }}
 
-className="flex justify-between items-center"
+                className="flex justify-between items-center"
 
->
+            >
 
-<div>
+                <div>
 
-<h1 className="text-2xl font-semibold">
+                    <h1 className="text-2xl font-semibold">
 
-Add Lecture
+                        Add Lecture
 
-</h1>
+                    </h1>
 
-<p className="text-gray-500">
+                    <p className="text-gray-500">
 
-Upload lectures for student dashboard
+                        Upload lectures for student dashboard
 
-</p>
+                    </p>
 
-</div>
+                </div>
 
-</motion.div>
+            </motion.div>
 
 
 
-{/* CARD */}
+            {/* CARD */}
 
-<motion.div
+            <motion.div
 
-initial={{opacity:0,y:30}}
+                initial={{ opacity: 0, y: 30 }}
 
-animate={{opacity:1,y:0}}
+                animate={{ opacity: 1, y: 0 }}
 
-className="bg-white rounded-2xl shadow p-8 space-y-6"
+                className="bg-white rounded-2xl shadow p-8 space-y-6"
 
->
+            >
 
 
-{message &&(
+                {message && (
 
-<div className="bg-indigo-50 text-indigo-700 p-3 rounded-lg">
+                    <div className="bg-indigo-50 text-indigo-700 p-3 rounded-lg">
 
-{message}
+                        {message}
 
-</div>
+                    </div>
 
-)}
+                )}
 
 
 
-<form
+                <form
 
-onSubmit={handleSubmit}
+                    onSubmit={handleSubmit}
 
-className="grid md:grid-cols-2 gap-6"
+                    className="grid md:grid-cols-2 gap-6"
 
->
+                >
 
 
-{/* TITLE */}
+                    {/* TITLE */}
 
-<div>
+                    <div>
 
-<label className="text-sm text-gray-600">
+                        <label className="text-sm text-gray-600">
 
-Lecture Title
+                            Lecture Title
 
-</label>
+                        </label>
 
-<input
+                        <input
 
-name="title"
+                            name="title"
 
-required
+                            required
 
-value={form.title}
+                            value={form.title}
 
-onChange={handleChange}
+                            onChange={handleChange}
 
-placeholder="IP Addressing Basics"
+                            placeholder="IP Addressing Basics"
 
-className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
+                            className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
 
-/>
+                        />
 
-</div>
+                    </div>
 
 
 
-{/* SUBJECT */}
+                    {/* SUBJECT */}
 
-<div>
+                    <div>
 
-<label className="text-sm text-gray-600">
+                        <label className="text-sm text-gray-600">
 
-Subject
+                            Subject
 
-</label>
+                        </label>
 
-<input
+                        <input
 
-name="subject"
+                            name="subject"
 
-required
+                            required
 
-value={form.subject}
+                            value={form.subject}
 
-onChange={handleChange}
+                            onChange={handleChange}
 
-placeholder="Computer Networks"
+                            placeholder="Computer Networks"
 
-className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
+                            className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
 
-/>
+                        />
 
-</div>
+                    </div>
 
 
 
-{/* FACULTY NAME */}
+                    {/* FACULTY NAME */}
 
-<div>
+                    <div>
 
-<label className="text-sm text-gray-600">
+                        <label className="text-sm text-gray-600">
 
-Faculty Name
+                            Faculty Name
 
-</label>
+                        </label>
 
-<input
+                        <input
 
-name="facultyName"
+                            name="facultyName"
 
-required
+                            required
 
-value={form.facultyName}
+                            value={form.facultyName}
 
-onChange={handleChange}
+                            onChange={handleChange}
 
-placeholder="Prof Sharma"
+                            placeholder="Prof Sharma"
 
-className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
+                            className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
 
-/>
+                        />
 
-</div>
+                    </div>
 
 
 
-{/* CLASS */}
+                    {/* CLASS */}
 
-<div>
+                    <div>
 
-<label className="text-sm text-gray-600">
+                        <label className="text-sm text-gray-600">
 
-Class
+                            Class
 
-</label>
+                        </label>
 
-<select
+                        <select
 
-name="className"
+                            name="className"
 
-required
+                            required
 
-value={form.className}
+                            value={form.className}
 
-onChange={handleChange}
+                            onChange={handleChange}
 
-className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
+                            className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
 
->
+                        >
 
-<option value="">
+                            <option value="">
 
-Select Class
+                                Select Class
 
-</option>
+                            </option>
 
-<option>BScCSFY</option>
+                            <option>BScCSFY</option>
 
-<option>BScCSSY</option>
+                            <option>BScCSSY</option>
 
-<option>BScCSTY</option>
+                            <option>BScCSTY</option>
 
-</select>
+                        </select>
 
-</div>
+                    </div>
 
 
 
-{/* YOUTUBE */}
+                    {/* YOUTUBE */}
 
-<div className="md:col-span-2">
+                    <div className="md:col-span-2">
 
-<label className="text-sm text-gray-600">
+                        <label className="text-sm text-gray-600">
 
-Youtube Lecture Link
+                            Youtube Lecture Link
 
-</label>
+                        </label>
 
-<input
+                        <input
 
-name="youtubeLink"
+                            name="youtubeLink"
 
-required
+                            required
 
-value={form.youtubeLink}
+                            value={form.youtubeLink}
 
-onChange={handleChange}
+                            onChange={handleChange}
 
-placeholder="https://youtube.com/watch?v=..."
+                            placeholder="https://youtube.com/watch?v=..."
 
-className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
+                            className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
 
-/>
+                        />
 
-</div>
+                    </div>
 
 
 
-{/* BUTTON */}
+                    {/* BUTTON */}
 
-<div className="md:col-span-2 flex justify-end">
+                    <div className="md:col-span-2 flex justify-end">
 
-<button
+                        <button
 
-type="submit"
+                            type="submit"
 
-disabled={loading}
+                            disabled={loading}
 
-className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg font-medium"
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg font-medium"
 
->
+                        >
 
-{loading ? "Uploading..." : "Add Lecture"}
+                            {loading ? "Uploading..." : "Add Lecture"}
 
-</button>
+                        </button>
 
-</div>
+                    </div>
 
-</form>
+                </form>
 
-</motion.div>
+            </motion.div>
 
-</div>
+        </div>
 
-);
+    );
 
 }

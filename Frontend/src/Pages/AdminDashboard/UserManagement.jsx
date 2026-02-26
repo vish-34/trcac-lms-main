@@ -23,7 +23,7 @@ export default function UserManagement() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/users', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/users`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -47,7 +47,7 @@ export default function UserManagement() {
     setError("");
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/create-user', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/create-user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,7 +80,7 @@ export default function UserManagement() {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/users/${userId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
