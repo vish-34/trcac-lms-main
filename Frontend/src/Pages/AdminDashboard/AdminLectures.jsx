@@ -1,438 +1,416 @@
-import { useState, useEffect } from "react";
+import { useState,useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-export default function Lectures() {
+export default function Lectures(){
 
-    const navigate = useNavigate();
+const navigate = useNavigate();
 
-    const addlectures = () => {
+const addlectures=()=>{
 
-        navigate("/admindashboard/addlectures");
+navigate("/admindashboard/addlectures");
 
-    };
+};
 
 
-    // ===================
-    // STATE
-    // ===================
+// =================
 
-    const [lectures, setLectures] = useState([]);
+const [lectures,setLectures]=useState([]);
 
 
 
-    // ===================
-    // FETCH LECTURES
-    // ===================
 
-    const fetchLectures = async () => {
+// FETCH
 
-        try {
+const fetchLectures=async()=>{
 
-            const res = await axios.get(
+try{
 
-                `${import.meta.env.VITE_API_URL}/api/lecture/all`
+const res=await axios.get(
 
-            );
+`${import.meta.env.VITE_API_URL}/api/lecture/all`
 
-            setLectures(res.data);
+);
 
-        }
-        catch (error) {
+setLectures(res.data);
 
-            console.log(error);
+}catch(error){
 
-        }
+console.log(error);
 
-    };
+}
 
+};
 
 
-    // ===================
-    // DELETE LECTURE
-    // ===================
 
-    const deleteLecture = async (id) => {
+// DELETE
 
-        try {
+const deleteLecture=async(id)=>{
 
-            const confirmDelete = window.confirm(
+try{
 
-                "Are you sure you want to delete this lecture?"
+const confirmDelete=window.confirm(
 
-            );
+"Are you sure you want to delete this lecture?"
 
-            if (!confirmDelete) return;
+);
 
+if(!confirmDelete) return;
 
-            await axios.delete(
+await axios.delete(
 
-                `${import.meta.env.VITE_API_URL}/api/lecture/delete/${id}`
+`${import.meta.env.VITE_API_URL}/api/lecture/delete/${id}`
 
-            );
+);
 
+fetchLectures();
 
-            // refresh instantly
+}catch(error){
 
-            fetchLectures();
+console.log(error);
 
-        }
-        catch (error) {
+alert("Error deleting lecture");
 
-            console.log(error);
+}
 
-            alert("Error deleting lecture");
+};
 
-        }
 
-    };
 
+// AUTO LOAD
 
+useEffect(()=>{
 
-    // ===================
-    // AUTO LOAD
-    // ===================
+fetchLectures();
 
-    useEffect(() => {
+const interval=setInterval(fetchLectures,10000);
 
-        fetchLectures();
+return()=>clearInterval(interval);
 
-        const interval = setInterval(
+},[]);
 
-            fetchLectures,
-            10000
 
-        );
 
-        return () => clearInterval(interval);
+return(
 
-    }, []);
+<div className="space-y-8 px-4 sm:px-6 md:px-8 pt-14 md:pt-0">
 
 
 
-    return (
 
-        <div className="space-y-8">
+{/* HEADER */}
 
+<div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
 
-            {/* HEADER */}
+<h1 className="text-xl sm:text-2xl font-semibold">
 
-            <div className="flex justify-between items-center">
+Lecture Management
 
-                <h1 className="text-2xl font-semibold">
+</h1>
 
-                    Lecture Management
+<button
 
-                </h1>
+onClick={addlectures}
 
-                <button
+className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 w-full sm:w-auto"
 
-                    onClick={addlectures}
+>
 
-                    className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700"
++ Add Lecture
 
-                >
+</button>
 
-                    + Add Lecture
+</div>
 
-                </button>
 
-            </div>
 
 
 
-            {/* SUMMARY */}
+{/* SUMMARY */}
 
-            <div className="grid grid-cols-4 gap-5">
+<div
 
-                <StatCard
+className="
+grid
+grid-cols-2
+md:grid-cols-4
+gap-4 sm:gap-5
+"
 
-                    title="Total Lectures"
+>
 
-                    value={lectures.length}
+<StatCard title="Total Lectures" value={lectures.length} color="bg-indigo-100"/>
 
-                    color="bg-indigo-100"
+<StatCard
 
-                />
+title="Today Uploaded"
 
-                <StatCard
+value={lectures.filter(l=>
 
-                    title="Today Uploaded"
+new Date(l.createdAt).toDateString()
 
-                    value={lectures.filter(l =>
+===new Date().toDateString()
 
-                        new Date(l.createdAt).toDateString()
+).length}
 
-                        === new Date().toDateString()
+color="bg-purple-100"
 
-                    ).length}
+/>
 
-                    color="bg-purple-100"
+<StatCard
 
-                />
+title="Active Faculty"
 
-                <StatCard
+value={[...new Set(
 
-                    title="Active Faculty"
+lectures.map(l=>l.facultyName)
 
-                    value={[...new Set(
+)].length}
 
-                        lectures.map(l => l.facultyName)
+color="bg-green-100"
 
-                    )].length}
+/>
 
-                    color="bg-green-100"
+<StatCard
 
-                />
+title="Classes"
 
-                <StatCard
+value={[...new Set(
 
-                    title="Classes"
+lectures.map(l=>l.className)
 
-                    value={[...new Set(
+)].length}
 
-                        lectures.map(l => l.className)
+color="bg-red-100"
 
-                    )].length}
+/>
 
-                    color="bg-red-100"
+</div>
 
-                />
 
-            </div>
 
 
+{/* SEARCH */}
 
-            {/* SEARCH */}
+<input
 
-            <input
+placeholder="Search Lecture / Faculty / Course"
 
-                placeholder="Search Lecture / Faculty / Course"
+className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400"
 
-                className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+/>
 
-            />
 
 
 
-            {/* TABLE */}
+{/* TABLE */}
 
-            <motion.div
+<motion.div
 
-                initial={{ opacity: 0, y: 20 }}
+initial={{opacity:0,y:20}}
 
-                animate={{ opacity: 1, y: 0 }}
+animate={{opacity:1,y:0}}
 
-                className="bg-white rounded-xl shadow overflow-hidden"
+className="bg-white rounded-xl shadow overflow-x-auto"
 
-            >
+>
 
-                <table className="w-full text-left">
+<table className="min-w-[850px] text-left">
 
-                    <thead className="bg-gray-50">
+<thead className="bg-gray-50">
 
-                        <tr>
+<tr>
 
-                            <th className="p-4">Topic</th>
+<th className="p-4">Topic</th>
 
-                            <th>Subject</th>
+<th>Subject</th>
 
-                            <th>Faculty</th>
+<th>Faculty</th>
 
-                            <th>Course</th>
+<th>Course</th>
 
-                            <th>Date</th>
+<th>Date</th>
 
-                            <th>Status</th>
+<th>Status</th>
 
-                            <th>Actions</th>
+<th>Actions</th>
 
-                        </tr>
+</tr>
 
-                    </thead>
+</thead>
 
+<tbody>
 
+{lectures.map((l)=>(
 
-                    <tbody>
+<tr
 
-                        {lectures.map((l) => (
+key={l._id}
 
-                            <tr key={l._id} className="border-t hover:bg-gray-50">
+className="border-t hover:bg-gray-50"
 
-                                <td className="p-4 font-medium">
+>
 
-                                    {l.title}
+<td className="p-4 font-medium">
 
-                                </td>
+{l.title}
 
-                                <td>
+</td>
 
-                                    {l.subject}
+<td>{l.subject}</td>
 
-                                </td>
+<td>{l.facultyName}</td>
 
-                                <td>
+<td>{l.className}</td>
 
-                                    {l.facultyName}
+<td>
 
-                                </td>
+{new Date(l.createdAt).toLocaleDateString()}
 
-                                <td>
+</td>
 
-                                    {l.className}
+<td>
 
-                                </td>
+<span className="bg-green-100 text-green-700 px-3 py-1 rounded-full">
 
-                                <td>
+Uploaded
 
-                                    {new Date(l.createdAt).toLocaleDateString()}
+</span>
 
-                                </td>
+</td>
 
-                                <td>
 
-                                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full">
+<td className="space-x-3 whitespace-nowrap">
 
-                                        Uploaded
+<button className="text-indigo-600 font-medium">
 
-                                    </span>
+View
 
-                                </td>
+</button>
 
+<button className="text-yellow-600">
 
+Edit
 
-                                <td className="space-x-3">
+</button>
 
-                                    <button className="text-indigo-600 font-medium">
+<button
 
-                                        View
+onClick={()=>deleteLecture(l._id)}
 
-                                    </button>
+className="text-red-500 hover:underline"
 
-                                    <button className="text-yellow-600">
+>
 
-                                        Edit
+Remove
 
-                                    </button>
+</button>
 
+</td>
 
-                                    {/* REMOVE BUTTON */}
+</tr>
 
-                                    <button
+))}
 
-                                        onClick={() => deleteLecture(l._id)}
+</tbody>
 
-                                        className="text-red-500 hover:underline"
+</table>
 
-                                    >
+</motion.div>
 
-                                        Remove
 
-                                    </button>
 
-                                </td>
 
-                            </tr>
+{/* RECENT ACTIVITY */}
 
-                        ))}
+<div>
 
-                    </tbody>
+<h2 className="text-lg sm:text-xl font-semibold mb-4">
 
-                </table>
+Recent Lecture Activity
 
-            </motion.div>
+</h2>
 
+<div className="bg-white rounded-xl shadow p-5 sm:p-6 space-y-3">
 
+{lectures.slice(0,3).map((l)=>(
 
-            {/* RECENT ACTIVITY */}
+<ActivityCard
 
-            <div>
+key={l._id}
 
-                <h2 className="text-xl font-semibold mb-4">
+text={`${l.facultyName} uploaded ${l.subject} Lecture`}
 
-                    Recent Lecture Activity
+time={new Date(l.createdAt).toLocaleString()}
 
-                </h2>
+/>
 
-                <div className="bg-white rounded-xl shadow p-6 space-y-3">
+))}
 
-                    {lectures.slice(0, 3).map((l) => (
+</div>
 
-                        <ActivityCard
+</div>
 
-                            key={l._id}
+</div>
 
-                            text={`${l.facultyName} uploaded ${l.subject} Lecture`}
-
-                            time={new Date(l.createdAt).toLocaleString()}
-
-                        />
-
-                    ))}
-
-                </div>
-
-            </div>
-
-        </div>
-
-    );
+);
 
 }
 
 
 
-/* ---------- STAT CARD ---------- */
+/* STAT CARD */
 
-function StatCard({ title, value, color }) {
+function StatCard({title,value,color}){
 
-    return (
+return(
 
-        <div className={`${color} rounded-xl p-5`}>
+<div className={`${color} rounded-xl p-4 sm:p-5`}>
 
-            <p className="text-sm text-gray-600">
+<p className="text-sm text-gray-600">
 
-                {title}
+{title}
 
-            </p>
+</p>
 
-            <h2 className="text-xl font-semibold mt-2">
+<h2 className="text-lg sm:text-xl font-semibold mt-2">
 
-                {value}
+{value}
 
-            </h2>
+</h2>
 
-        </div>
+</div>
 
-    );
+);
 
 }
 
 
 
-/* ---------- ACTIVITY ---------- */
+/* ACTIVITY */
 
-function ActivityCard({ text, time }) {
+function ActivityCard({text,time}){
 
-    return (
+return(
 
-        <div className="flex justify-between border-b pb-2">
+<div className="flex flex-col sm:flex-row sm:justify-between border-b pb-2 gap-1">
 
-            <p className="font-medium">
+<p className="font-medium">
 
-                {text}
+{text}
 
-            </p>
+</p>
 
-            <span className="text-sm text-gray-400">
+<span className="text-sm text-gray-400">
 
-                {time}
+{time}
 
-            </span>
+</span>
 
-        </div>
+</div>
 
-    );
+);
 
 }

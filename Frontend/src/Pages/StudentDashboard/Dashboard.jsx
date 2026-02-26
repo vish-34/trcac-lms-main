@@ -3,15 +3,33 @@ import { Outlet } from "react-router-dom";
 import { useBackNavigationBlock } from "../../hooks/useBackNavigationBlock.js";
 
 export default function Dashboard(){
-  // Completely block back navigation from dashboard
+
   useBackNavigationBlock();
 
   return(
-    <div>
+
+    <div className="flex">
+
       <Sidebar/>
-      <div className="ml-[260px] h-screen overflow-y-auto bg-gray-50 p-8">
+
+      <div
+        className="
+        flex-1
+        md:ml-[280px]
+        h-screen
+        overflow-y-auto
+        bg-gray-50
+        p-4 sm:p-6 md:p-8
+        pt-16 md:pt-8
+      "
+      >
+
         <Outlet/>
+
       </div>
+
     </div>
+
   );
+
 }

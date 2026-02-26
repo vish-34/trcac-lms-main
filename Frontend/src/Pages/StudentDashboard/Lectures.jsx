@@ -1,193 +1,208 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-export default function Lectures(){
+export default function Lectures() {
 
-const [lectures,setLectures]=useState([]);
+    const [lectures, setLectures] = useState([]);
 
-const studentClass="BScCSFY"; // later from logged user
+    const studentClass = "BScCSFY";
 
 
+    // =================
+    // EMBED LINK
+    // =================
 
-// =======================
-// GET EMBED LINK
-// =======================
+    const getEmbedLink = (url) => {
 
-const getEmbedLink=(url)=>{
+        if (!url) return "";
 
-if(!url) return "";
+        let videoId = "";
 
-let videoId="";
+        try {
 
-try{
+            if (url.includes("youtu.be")) {
 
-// short link
+                videoId = url.split("youtu.be/")[1]?.split("?")[0];
 
-if(url.includes("youtu.be")){
+            }
 
-videoId = url.split("youtu.be/")[1]?.split("?")[0];
+            else if (url.includes("shorts")) {
 
-}
+                videoId = url.split("shorts/")[1]?.split("?")[0];
 
-// shorts
+            }
 
-else if(url.includes("shorts")){
+            else if (url.includes("watch?v=")) {
 
-videoId = url.split("shorts/")[1]?.split("?")[0];
+                videoId = url.split("v=")[1]?.split("&")[0];
 
-}
+            }
 
-// normal watch
+            return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&disablekb=1&iv_load_policy=3&playsinline=1`;
 
-else if(url.includes("watch?v=")){
+        } catch {
 
-videoId = url.split("v=")[1]?.split("&")[0];
+            return "";
 
-}
+        }
 
+    };
 
-// ⭐ LMS EMBED SETTINGS
 
-return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&disablekb=1&iv_load_policy=3&playsinline=1`;
+    // =================
+    // FETCH
+    // =================
 
-}
-catch{
+    useEffect(() => {
 
-return "";
+        fetchLectures();
 
-}
+    }, []);
 
-};
 
 
+    const fetchLectures = async () => {
 
-// =======================
-// FETCH LECTURES
-// =======================
+        try {
 
-useEffect(()=>{
+            const res = await axios.get(
 
-fetchLectures();
+                `${import.meta.env.VITE_API_URL}/api/lecture/student/${studentClass}`
 
-},[]);
+            );
 
+            setLectures(res.data);
 
+        }
+        catch (err) {
 
-const fetchLectures = async()=>{
+            console.log(err);
 
-try{
+        }
 
-const res = await axios.get(
+    };
 
-`${import.meta.env.VITE_API_URL}/api/lecture/student/${studentClass}`
 
-);
 
-setLectures(res.data);
+    return (
 
-}
-catch(err){
+        <div className="px-4 sm:px-6 md:px-8 pt-14 md:pt-0">
 
-console.log(err);
+            <h1 className="text-xl sm:text-2xl font-semibold mb-6">
 
-}
+                Lectures
 
-};
+            </h1>
 
 
 
-return(
+            <div className="grid gap-6 sm:gap-8">
 
-<div className="p-8">
+                {
 
-<h1 className="text-2xl font-semibold mb-6">
+                    lectures.map((lecture) => (
 
-Lectures
+                        <div
 
-</h1>
+                            key={lecture._id}
 
+                            className="
+bg-white
+rounded-2xl
+shadow-md
+p-4 sm:p-6
+space-y-4
+"
 
-<div className="grid gap-8">
+                        >
 
-{
+                            {/* TITLE */}
 
-lectures.map((lecture)=>(
+                            <h2 className="text-base sm:text-lg font-semibold">
 
-<div
+                                {lecture.title}
 
-key={lecture._id}
+                            </h2>
 
-className="bg-white rounded-2xl shadow-md p-6 space-y-4"
 
->
 
-{/* TITLE */}
+                            {/* SUBJECT + FACULTY */}
 
-<h2 className="text-lg font-semibold">
+                            <div
+                                className="
+flex
+flex-col
+sm:flex-row
+sm:gap-6
+gap-1
+text-sm
+text-gray-500
+"
+                            >
 
-{lecture.title}
+                                <p>
 
-</h2>
+                                    Subject : {lecture.subject}
 
+                                </p>
 
-{/* SUBJECT + FACULTY */}
+                                {lecture.facultyName && (
 
-<div className="flex gap-6 text-sm text-gray-500">
+                                    <p>
 
-<p>
+                                        Faculty : {lecture.facultyName}
 
-Subject : {lecture.subject}
+                                    </p>
 
-</p>
+                                )}
 
-{lecture.facultyName && (
+                            </div>
 
-<p>
 
-Faculty : {lecture.facultyName}
 
-</p>
+                            {/* VIDEO PLAYER */}
 
-)}
+                            <div className="rounded-xl overflow-hidden">
 
-</div>
+                                {/* Responsive 16:9 Video */}
 
+                                <div className="relative w-full pt-[56.25%]">
 
+                                    <iframe
 
-{/* VIDEO PLAYER */}
+                                        loading="lazy"
 
-<div className="rounded-xl overflow-hidden">
+                                        src={getEmbedLink(lecture.youtubeLink)}
 
-<iframe
+                                        allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
 
-loading="lazy"
+                                        allowFullScreen
 
-width="100%"
+                                        className="
+absolute
+top-0
+left-0
+w-full
+h-full
+border-0
+"
 
-height="420"
+                                    ></iframe>
 
-src={getEmbedLink(lecture.youtubeLink)}
+                                </div>
 
-allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
+                            </div>
 
-allowFullScreen
+                        </div>
 
-className="w-full border-0"
+                    ))
 
-/>
+                }
 
-</div>
+            </div>
 
-</div>
+        </div>
 
-))
-
-}
-
-</div>
-
-</div>
-
-);
+    );
 
 }
