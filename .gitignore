@@ -1,0 +1,59 @@
+# dependencies
+node_modules/
+
+# dotenv environment files
+.env
+.env.*
+!.env.example
+!backend/.env.example
+!Frontend/.env.example
+
+# logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# coverage
+coverage/
+*.lcov
+
+# build outputs
+Frontend/dist/
+Frontend/.vite/
+backend/dist/
+dist/
+build/
+
+# caches
+.cache/
+.tmp/
+tmp/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# windsurf
+.windsurf/
+
+# local certificates
+*.pem
+*.key
+
+# package manager
+.pnpm-store/
+
+# misc
+*.tgz

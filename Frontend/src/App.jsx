@@ -1,0 +1,182 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext.jsx';
+
+// Pages
+import HomePage from './Pages/HomePage.jsx';
+import AdminLogin from './Pages/AdminLogin.jsx';
+import StudentTeacherLogin from './Pages/StudentTeacherLogin.jsx';
+import AdminCreateUser from './Pages/AdminCreateUser.jsx';
+import AdminDashboard from './Pages/AdminDashboard/AdminDashboard.jsx';
+import Dashboard from './Pages/StudentDashboard/Dashboard.jsx';
+import StudentHome from './Pages/StudentDashboard/Home.jsx';
+import StudentLectures from './Pages/StudentDashboard/Lectures.jsx';
+import StudentAssignment from './Pages/StudentDashboard/Assignment.jsx';
+import TeacherDashboard from './Pages/TeacherDashboard/TeacherDashboard.jsx';
+import TeacherHome from './Pages/TeacherDashboard/TeacherHome.jsx';
+import TeacherLectures from './Pages/TeacherDashboard/TeacherLectures.jsx';
+import TeacherAssignment from './Pages/TeacherDashboard/TeacherAssignment.jsx';
+import TeacherExams from './Pages/TeacherDashboard/TeacherExams.jsx';
+import AdminHome from './Pages/AdminDashboard/AdminHome.jsx';
+import AdminLectures from './Pages/AdminDashboard/AdminLectures.jsx';
+import AdminCredentials from './Pages/AdminDashboard/AdminCredentials.jsx';
+import UserManagement from './Pages/AdminDashboard/UserManagement.jsx';
+import AdminAddLecture from './components/Admindashboard/AdminAddLecture.jsx';
+
+// Navigation Guard Component
+const NavigationGuard = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Block navigation to login pages if authenticated
+  React.useEffect(() => {
+    if (!loading && isAuthenticated) {
+      const currentPath = location.pathname;
+      const loginPaths = ['/login', '/admin-login', '/student-teacher-login'];
+      
+      if (loginPaths.includes(currentPath)) {
+        console.log(' NavigationGuard: Redirecting authenticated user from login page');
+        
+        // Get user info from localStorage or auth context
+        const userStr = localStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : {};
+        
+        // Use React Router navigate without replace to allow normal back navigation
+        if (user.role === 'admin') {
+          navigate('/admindashboard');
+        } else {
+          navigate('/app');
+        }
+      }
+    }
+  }, [isAuthenticated, loading, location, navigate]);
+
+  return children;
+};
+
+// Protected Route Component
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { isAuthenticated, user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(user?.role)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
+// App Routes Component
+const AppRoutes = () => {
+  const { user } = useAuth();
+  
+  return (
+    <Routes>
+      {/* Landing Page */}
+      <Route path="/" element={<HomePage />} />
+      
+      {/* Login Routes - Protected by NavigationGuard */}
+      <Route path="/login" element={<StudentTeacherLogin />} />
+      <Route path="/admin-login" element={<AdminLogin />} />
+      <Route path="/student-teacher-login" element={<StudentTeacherLogin />} />
+      
+      {/* Admin Create User - Admin Only */}
+      <Route 
+        path="/admin-create-user" 
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminCreateUser />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* App Route - redirects based on role */}
+      <Route 
+        path="/app" 
+        element={
+          <ProtectedRoute>
+            {user?.role === 'teacher' ? (
+              <Navigate to="/teacherdashboard" replace />
+            ) : (
+              <Navigate to="/studentdashboard" replace />
+            )}
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Student Dashboard */}
+      <Route 
+        path="/studentdashboard" 
+        element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<StudentHome />} />
+        <Route path="lectures" element={<StudentLectures />} />
+        <Route path="assignment" element={<StudentAssignment />} />
+      </Route>
+      
+      {/* Teacher Dashboard */}
+      <Route 
+        path="/teacherdashboard" 
+        element={
+          <ProtectedRoute allowedRoles={['teacher']}>
+            <TeacherDashboard />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<TeacherHome />} />
+        <Route path="lectures" element={<TeacherLectures />} />
+        <Route path="assignment" element={<TeacherAssignment />} />
+        <Route path="exams" element={<TeacherExams />} />
+      </Route>
+      
+      {/* Admin Dashboard */}
+      <Route 
+        path="/admindashboard" 
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AdminHome />} />
+        <Route path="lectures" element={<AdminLectures />} />
+        <Route path="credentials" element={<AdminCredentials />} />
+        <Route path="users" element={<UserManagement />} />
+        <Route path="addlectures" element={<AdminAddLecture />} />
+      </Route>
+      
+      {/* Catch all route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
+
+const App = () => {
+  return (
+    <Router>
+      <AuthProvider>
+        <NavigationGuard>
+          <AppRoutes />
+        </NavigationGuard>
+      </AuthProvider>
+    </Router>
+  );
+};
+
+export default App;

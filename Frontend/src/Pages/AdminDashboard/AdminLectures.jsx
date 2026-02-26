@@ -1,0 +1,438 @@
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
+export default function Lectures() {
+
+    const navigate = useNavigate();
+
+    const addlectures = () => {
+
+        navigate("/admindashboard/addlectures");
+
+    };
+
+
+    // ===================
+    // STATE
+    // ===================
+
+    const [lectures, setLectures] = useState([]);
+
+
+
+    // ===================
+    // FETCH LECTURES
+    // ===================
+
+    const fetchLectures = async () => {
+
+        try {
+
+            const res = await axios.get(
+
+                "http://localhost:5000/api/lecture/all"
+
+            );
+
+            setLectures(res.data);
+
+        }
+        catch (error) {
+
+            console.log(error);
+
+        }
+
+    };
+
+
+
+    // ===================
+    // DELETE LECTURE
+    // ===================
+
+    const deleteLecture = async (id) => {
+
+        try {
+
+            const confirmDelete = window.confirm(
+
+                "Are you sure you want to delete this lecture?"
+
+            );
+
+            if (!confirmDelete) return;
+
+
+            await axios.delete(
+
+                `http://localhost:5000/api/lecture/delete/${id}`
+
+            );
+
+
+            // refresh instantly
+
+            fetchLectures();
+
+        }
+        catch (error) {
+
+            console.log(error);
+
+            alert("Error deleting lecture");
+
+        }
+
+    };
+
+
+
+    // ===================
+    // AUTO LOAD
+    // ===================
+
+    useEffect(() => {
+
+        fetchLectures();
+
+        const interval = setInterval(
+
+            fetchLectures,
+            10000
+
+        );
+
+        return () => clearInterval(interval);
+
+    }, []);
+
+
+
+    return (
+
+        <div className="space-y-8">
+
+
+            {/* HEADER */}
+
+            <div className="flex justify-between items-center">
+
+                <h1 className="text-2xl font-semibold">
+
+                    Lecture Management
+
+                </h1>
+
+                <button
+
+                    onClick={addlectures}
+
+                    className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700"
+
+                >
+
+                    + Add Lecture
+
+                </button>
+
+            </div>
+
+
+
+            {/* SUMMARY */}
+
+            <div className="grid grid-cols-4 gap-5">
+
+                <StatCard
+
+                    title="Total Lectures"
+
+                    value={lectures.length}
+
+                    color="bg-indigo-100"
+
+                />
+
+                <StatCard
+
+                    title="Today Uploaded"
+
+                    value={lectures.filter(l =>
+
+                        new Date(l.createdAt).toDateString()
+
+                        === new Date().toDateString()
+
+                    ).length}
+
+                    color="bg-purple-100"
+
+                />
+
+                <StatCard
+
+                    title="Active Faculty"
+
+                    value={[...new Set(
+
+                        lectures.map(l => l.facultyName)
+
+                    )].length}
+
+                    color="bg-green-100"
+
+                />
+
+                <StatCard
+
+                    title="Classes"
+
+                    value={[...new Set(
+
+                        lectures.map(l => l.className)
+
+                    )].length}
+
+                    color="bg-red-100"
+
+                />
+
+            </div>
+
+
+
+            {/* SEARCH */}
+
+            <input
+
+                placeholder="Search Lecture / Faculty / Course"
+
+                className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+
+            />
+
+
+
+            {/* TABLE */}
+
+            <motion.div
+
+                initial={{ opacity: 0, y: 20 }}
+
+                animate={{ opacity: 1, y: 0 }}
+
+                className="bg-white rounded-xl shadow overflow-hidden"
+
+            >
+
+                <table className="w-full text-left">
+
+                    <thead className="bg-gray-50">
+
+                        <tr>
+
+                            <th className="p-4">Topic</th>
+
+                            <th>Subject</th>
+
+                            <th>Faculty</th>
+
+                            <th>Course</th>
+
+                            <th>Date</th>
+
+                            <th>Status</th>
+
+                            <th>Actions</th>
+
+                        </tr>
+
+                    </thead>
+
+
+
+                    <tbody>
+
+                        {lectures.map((l) => (
+
+                            <tr key={l._id} className="border-t hover:bg-gray-50">
+
+                                <td className="p-4 font-medium">
+
+                                    {l.title}
+
+                                </td>
+
+                                <td>
+
+                                    {l.subject}
+
+                                </td>
+
+                                <td>
+
+                                    {l.facultyName}
+
+                                </td>
+
+                                <td>
+
+                                    {l.className}
+
+                                </td>
+
+                                <td>
+
+                                    {new Date(l.createdAt).toLocaleDateString()}
+
+                                </td>
+
+                                <td>
+
+                                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full">
+
+                                        Uploaded
+
+                                    </span>
+
+                                </td>
+
+
+
+                                <td className="space-x-3">
+
+                                    <button className="text-indigo-600 font-medium">
+
+                                        View
+
+                                    </button>
+
+                                    <button className="text-yellow-600">
+
+                                        Edit
+
+                                    </button>
+
+
+                                    {/* REMOVE BUTTON */}
+
+                                    <button
+
+                                        onClick={() => deleteLecture(l._id)}
+
+                                        className="text-red-500 hover:underline"
+
+                                    >
+
+                                        Remove
+
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+                        ))}
+
+                    </tbody>
+
+                </table>
+
+            </motion.div>
+
+
+
+            {/* RECENT ACTIVITY */}
+
+            <div>
+
+                <h2 className="text-xl font-semibold mb-4">
+
+                    Recent Lecture Activity
+
+                </h2>
+
+                <div className="bg-white rounded-xl shadow p-6 space-y-3">
+
+                    {lectures.slice(0, 3).map((l) => (
+
+                        <ActivityCard
+
+                            key={l._id}
+
+                            text={`${l.facultyName} uploaded ${l.subject} Lecture`}
+
+                            time={new Date(l.createdAt).toLocaleString()}
+
+                        />
+
+                    ))}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    );
+
+}
+
+
+
+/* ---------- STAT CARD ---------- */
+
+function StatCard({ title, value, color }) {
+
+    return (
+
+        <div className={`${color} rounded-xl p-5`}>
+
+            <p className="text-sm text-gray-600">
+
+                {title}
+
+            </p>
+
+            <h2 className="text-xl font-semibold mt-2">
+
+                {value}
+
+            </h2>
+
+        </div>
+
+    );
+
+}
+
+
+
+/* ---------- ACTIVITY ---------- */
+
+function ActivityCard({ text, time }) {
+
+    return (
+
+        <div className="flex justify-between border-b pb-2">
+
+            <p className="font-medium">
+
+                {text}
+
+            </p>
+
+            <span className="text-sm text-gray-400">
+
+                {time}
+
+            </span>
+
+        </div>
+
+    );
+
+}
