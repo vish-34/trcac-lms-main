@@ -24,10 +24,7 @@ export default function Adminsidebar() {
     navigate("/");
   };
 
-  const displayName =
-    user?.email
-      ? extractNameFromEmail(user.email)
-      : "Admin";
+  const displayName = "Admin";
 
 
   const menuItems = [

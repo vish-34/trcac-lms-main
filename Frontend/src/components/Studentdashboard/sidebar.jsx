@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Video,
   FileText,
+  BookOpen,
   LogOut,
   Menu,
   X
@@ -24,9 +25,11 @@ export default function Sidebar() {
   };
 
   const displayName =
-    user?.email
-      ? extractNameFromEmail(user.email)
-      : "Student";
+    user?.fullName
+      ? user.fullName
+      : user?.email
+        ? extractNameFromEmail(user.email)
+        : "Student";
 
 
   const menuItems = [
@@ -35,6 +38,12 @@ export default function Sidebar() {
       name:"Home",
       path:"/studentdashboard",
       icon:<LayoutDashboard size={20}/>
+    },
+
+    {
+      name:"Subjects",
+      path:"/studentdashboard/subjects",
+      icon:<BookOpen size={20}/>
     },
 
     {
@@ -50,7 +59,6 @@ export default function Sidebar() {
     }
 
   ];
-
 
 
   return (
@@ -156,7 +164,7 @@ export default function Sidebar() {
 
                 <h2 className="font-bold text-slate-800 leading-tight">
 
-                  Welcome back, {displayName}
+                  {displayName}
 
                 </h2>
 
@@ -185,6 +193,8 @@ export default function Sidebar() {
                 key={item.path}
 
                 to={item.path}
+                
+                end = {item.path === "/studentdashboard"}
 
                 onClick={()=>setOpen(false)}
 

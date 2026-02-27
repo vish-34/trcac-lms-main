@@ -5,10 +5,7 @@ export default function AdminHome(){
 
   const { user, extractNameFromEmail } = useAuth();
 
-  const displayName =
-    user?.email
-      ? extractNameFromEmail(user.email)
-      : "Admin";
+  const displayName = "Admin";
 
 
   return(

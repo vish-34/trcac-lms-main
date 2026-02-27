@@ -23,7 +23,9 @@ export default function AdminCreateUser() {
     password: "",
     role: "student",
     college: "Degree College",
-    degree: ""
+    degree: "",
+    year: "",
+    semester: ""
   });
 
   const [formLoading, setFormLoading] = useState(false);
@@ -217,17 +219,83 @@ export default function AdminCreateUser() {
             <option value="Junior College">Junior College</option>
           </select>
 
-          {/* DEGREE (Only Student) */}
-          {formData.role === "student" && (
-            <input
+          {/* DEGREE/STREAM (Only Student) */}
+          {formData.role === "student" && formData.college === "Junior College" && (
+            <select
               name="degree"
-              type="text"
-              placeholder="Degree (e.g., Bachelor of Computer Science)"
               value={formData.degree}
               onChange={handleChange}
               required
               className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
-            />
+            >
+              <option value="">Select Stream</option>
+              <option value="Commerce">Commerce</option>
+              <option value="Arts">Arts</option>
+            </select>
+          )}
+
+          {/* DEGREE (Only Student - Degree College) */}
+          {formData.role === "student" && formData.college === "Degree College" && (
+            <select
+              name="degree"
+              value={formData.degree}
+              onChange={handleChange}
+              required
+              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+            >
+              <option value="">Select Degree</option>
+              <option value="B.Sc (CS)">B.Sc (CS)</option>
+              <option value="B.Sc (IT)">B.Sc (IT)</option>
+              <option value="BA">BA</option>
+              <option value="BAMMC">BAMMC</option>
+              <option value="BCom">BCom</option>
+              <option value="BMS">BMS</option>
+              <option value="BAF">BAF</option>
+            </select>
+          )}
+
+          {/* YEAR (Only Student) */}
+          {formData.role === "student" && formData.college && (
+            <select
+              name="year"
+              value={formData.year}
+              onChange={handleChange}
+              required
+              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+            >
+              <option value="">Select Year</option>
+              {formData.college === "Junior College" ? (
+                <>
+                  <option value="FY">First Year (FY)</option>
+                  <option value="SY">Second Year (SY)</option>
+                </>
+              ) : (
+                <>
+                  <option value="FY">First Year (FY)</option>
+                  <option value="SY">Second Year (SY)</option>
+                  <option value="TY">Third Year (TY)</option>
+                </>
+              )}
+            </select>
+          )}
+
+          {/* SEMESTER (Only for Degree College Students) */}
+          {formData.role === "student" && formData.college === "Degree College" && (
+            <select
+              name="semester"
+              value={formData.semester}
+              onChange={handleChange}
+              required
+              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+            >
+              <option value="">Select Semester</option>
+              <option value="1">Semester 1</option>
+              <option value="2">Semester 2</option>
+              <option value="3">Semester 3</option>
+              <option value="4">Semester 4</option>
+              <option value="5">Semester 5</option>
+              <option value="6">Semester 6</option>
+            </select>
           )}
 
           {/* SUBJECT (Only Teacher) */}

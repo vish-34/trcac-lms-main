@@ -1,11 +1,48 @@
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 export default function Home() {
   const { user, extractNameFromEmail } = useAuth();
-  const displayName = user?.email
-    ? extractNameFromEmail(user.email)
-    : "Student";
+  const navigate = useNavigate();
+
+  const [continueLecture, setContinueLecture] = useState(null);
+  const [continueProgress, setContinueProgress] = useState(null);
+
+  const displayName = user?.fullName
+    ? user.fullName
+    : user?.email
+      ? extractNameFromEmail(user.email)
+      : "Student";
+
+  useEffect(() => {
+    const fetchContinue = async () => {
+      try {
+        const studentId = user?.id;
+        if (!studentId) return;
+
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/progress/continue/${studentId}`,
+        );
+
+        setContinueLecture(res.data?.lecture || null);
+        setContinueProgress(res.data?.progress || null);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchContinue();
+  }, [user]);
+
+  const continuePercent = useMemo(() => {
+    const current = Number(continueProgress?.currentTime || 0);
+    const duration = Number(continueProgress?.duration || 0);
+    if (!duration || duration <= 0) return 0;
+    return Math.min(100, Math.max(0, Math.round((current / duration) * 100)));
+  }, [continueProgress]);
 
   return (
     <div className="space-y-8 px-2 sm:px-0">
@@ -36,12 +73,11 @@ export default function Home() {
         </div>
 
         <img
-          src="https://illustrations.popsy.co/purple/student-studying.svg"
-          className="h-24 sm:h-28 w-auto"
+          src="https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"
+          className="h-24 rounded-full sm:h-28 w-auto"
           alt="student illustration"
         />
       </motion.div>
-
 
       {/* STATS */}
       <div
@@ -78,53 +114,71 @@ export default function Home() {
         />
       </div>
 
-
       {/* CONTINUE LEARNING */}
       <div>
         <h2 className="text-lg sm:text-xl font-semibold mb-4">
           Continue Learning
         </h2>
 
-        <div
-          className="
-          bg-white
-          rounded-xl
-          shadow
-          p-5 sm:p-6
-          flex flex-col sm:flex-row
-          gap-4
-          sm:justify-between
-          sm:items-center
-          "
-        >
-          <div>
-            <h3 className="font-medium">
-              Computer Networks — Lecture 6
-            </h3>
-
-            <p className="text-sm text-gray-500">
-              IP Addressing
-            </p>
-          </div>
-
-          <button
+        {continueLecture && continueProgress ? (
+          <div
             className="
-            bg-indigo-600
-            text-white
-            px-5
-            py-2
-            rounded-lg
-            w-full sm:w-auto
+            bg-white
+            rounded-xl
+            shadow
+            p-5 sm:p-6
+            flex flex-col sm:flex-row
+            gap-4
+            sm:justify-between
+            sm:items-center
             "
           >
-            Resume
-          </button>
-        </div>
+            <div className="w-full">
+              <h3 className="font-medium">
+                {continueLecture.title}
+              </h3>
+
+              <p className="text-sm text-gray-500">
+                {continueLecture.subject}
+              </p>
+
+              <div className="mt-3">
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>Progress</span>
+                  <span>{continuePercent}%</span>
+                </div>
+                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-600"
+                    style={{ width: `${continuePercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigate(`/studentdashboard/lectures?resume=${continueLecture._id}`)}
+              className="
+              bg-indigo-600
+              text-white
+              px-5
+              py-2
+              rounded-lg
+              w-full sm:w-auto
+              "
+            >
+              Resume
+            </button>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow p-5 sm:p-6 text-sm text-gray-500">
+            Start watching a lecture to see it here.
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
 
 function StatCard({ title, value, color }) {
   return (

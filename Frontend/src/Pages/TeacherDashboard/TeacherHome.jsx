@@ -3,7 +3,11 @@ import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function TeacherHome() {
   const { user, extractNameFromEmail } = useAuth();
-  const displayName = user?.email ? extractNameFromEmail(user.email) : 'Teacher';
+  const displayName = user?.fullName
+    ? user.fullName
+    : user?.email
+      ? extractNameFromEmail(user.email)
+      : 'Teacher';
 
   return (
     <div className="space-y-8">

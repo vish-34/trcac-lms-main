@@ -12,6 +12,7 @@ import Dashboard from './Pages/StudentDashboard/Dashboard.jsx';
 import StudentHome from './Pages/StudentDashboard/Home.jsx';
 import StudentLectures from './Pages/StudentDashboard/Lectures.jsx';
 import StudentAssignment from './Pages/StudentDashboard/Assignment.jsx';
+import StudentSubjects from './Pages/StudentDashboard/Subjects.jsx';
 import TeacherDashboard from './Pages/TeacherDashboard/TeacherDashboard.jsx';
 import TeacherHome from './Pages/TeacherDashboard/TeacherHome.jsx';
 import TeacherLectures from './Pages/TeacherDashboard/TeacherLectures.jsx';
@@ -128,6 +129,7 @@ const AppRoutes = () => {
         <Route index element={<StudentHome />} />
         <Route path="lectures" element={<StudentLectures />} />
         <Route path="assignment" element={<StudentAssignment />} />
+        <Route path="subjects" element={<StudentSubjects />} />
       </Route>
       
       {/* Teacher Dashboard */}

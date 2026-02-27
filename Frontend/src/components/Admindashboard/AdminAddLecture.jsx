@@ -7,10 +7,15 @@ export default function AdminAddLecture() {
     const [form, setForm] = useState({
 
         title: "",
-        className: "",
         subject: "",
-        facultyName: "",   // ✅ NEW
-        youtubeLink: ""
+        facultyName: "",
+        youtubeLink: "",
+        college: "",
+        course: "",
+        stream: "",
+        degree: "",
+        year: "",
+        semester: ""
 
     });
 
@@ -23,10 +28,20 @@ export default function AdminAddLecture() {
 
     const handleChange = (e) => {
 
-        setForm({
+        const { name, value } = e.target;
 
-            ...form,
-            [e.target.name]: e.target.value
+        setForm((prev) => {
+
+            const updatedForm = { ...prev, [name]: value };
+
+            // Auto-set course based on college type and selection
+            if (name === 'degree' && prev.college === 'Degree College') {
+                updatedForm.course = value;
+            } else if (name === 'stream' && prev.college === 'Junior College') {
+                updatedForm.course = value;
+            }
+
+            return updatedForm;
 
         });
 
@@ -43,11 +58,39 @@ export default function AdminAddLecture() {
 
         try {
 
+            console.log('Submitting form data:', form);
+
+            // Only send relevant fields based on college type
+            const submissionData = {
+                title: form.title,
+                subject: form.subject,
+                facultyName: form.facultyName,
+                youtubeLink: form.youtubeLink,
+                college: form.college,
+                course: form.course,
+                year: form.year
+            };
+
+            // Add college-specific fields
+            if (form.college === 'Junior College') {
+                submissionData.stream = form.stream;
+            } else if (form.college === 'Degree College') {
+                submissionData.degree = form.degree;
+                submissionData.semester = form.semester;
+            }
+
+            // Explicitly remove stream for Degree College
+            if (form.college === 'Degree College') {
+                delete submissionData.stream;
+            }
+
+            console.log('Cleaned submission data:', submissionData);
+
             await axios.post(
 
                 `${import.meta.env.VITE_API_URL}/api/lecture/add`,
 
-                form
+                submissionData
 
             );
 
@@ -57,19 +100,23 @@ export default function AdminAddLecture() {
             setForm({
 
                 title: "",
-                className: "",
                 subject: "",
                 facultyName: "",
-                youtubeLink: ""
+                youtubeLink: "",
+                college: "",
+                course: "",
+                degree: "",
+                year: "",
+                semester: ""
 
             });
 
         }
         catch (error) {
 
-            console.log(error);
+            console.error('Error adding lecture:', error.response?.data || error.message);
 
-            setMessage("Error adding lecture ❌");
+            setMessage(`Error adding lecture: ${error.response?.data?.message || 'Unknown error'} ❌`);
 
         }
         finally {
@@ -243,23 +290,23 @@ export default function AdminAddLecture() {
 
 
 
-                    {/* CLASS */}
+                    {/* COLLEGE */}
 
                     <div>
 
                         <label className="text-sm text-gray-600">
 
-                            Class
+                            College
 
                         </label>
 
                         <select
 
-                            name="className"
+                            name="college"
 
                             required
 
-                            value={form.className}
+                            value={form.college}
 
                             onChange={handleChange}
 
@@ -269,21 +316,223 @@ export default function AdminAddLecture() {
 
                             <option value="">
 
-                                Select Class
+                                Select College
 
                             </option>
 
-                            <option>BScCSFY</option>
+                            <option value="Degree College">Degree College</option>
 
-                            <option>BScCSSY</option>
-
-                            <option>BScCSTY</option>
+                            <option value="Junior College">Junior College</option>
 
                         </select>
 
                     </div>
 
+                    {/* YEAR */}
 
+                    {form.college && (
+
+                        <div>
+
+                            <label className="text-sm text-gray-600">
+
+                                Year
+
+                            </label>
+
+                            <select
+
+                                name="year"
+
+                                required
+
+                                value={form.year}
+
+                                onChange={handleChange}
+
+                                className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
+
+                            >
+
+                                <option value="">
+
+                                    Select Year
+
+                                </option>
+
+                                {form.college === "Junior College" ? (
+
+                                    <>
+
+                                        <option value="FY">First Year (FY)</option>
+
+                                        <option value="SY">Second Year (SY)</option>
+
+                                    </>
+
+                                ) : (
+
+                                    <>
+
+                                        <option value="FY">First Year (FY)</option>
+
+                                        <option value="SY">Second Year (SY)</option>
+
+                                        <option value="TY">Third Year (TY)</option>
+
+                                    </>
+
+                                )}
+
+                            </select>
+
+                        </div>
+
+                    )}
+
+                    {/* COURSE - For Junior College */}
+
+                    {form.college === "Junior College" && (
+
+                        <div>
+
+                            <label className="text-sm text-gray-600">
+
+                                Stream
+
+                            </label>
+
+                            <select
+
+                                name="stream"
+
+                                required
+
+                                value={form.stream}
+
+                                onChange={handleChange}
+
+                                className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
+
+                            >
+
+                                <option value="">
+
+                                    Select Stream
+
+                                </option>
+
+                                <option value="Commerce">Commerce</option>
+
+                                <option value="Arts">Arts</option>
+
+                            </select>
+
+                        </div>
+
+                    )}
+
+                    {/* COURSE - For Degree College */}
+
+                    {form.college === "Degree College" && (
+
+                        <div>
+
+                            <label className="text-sm text-gray-600">
+
+                                Degree
+
+                            </label>
+
+                            <select
+
+                                name="degree"
+
+                                required
+
+                                value={form.degree}
+
+                                onChange={handleChange}
+
+                                className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
+
+                            >
+
+                                <option value="">
+
+                                    Select Degree
+
+                                </option>
+
+                                <option value="B.Sc (CS)">B.Sc (CS)</option>
+
+                                <option value="B.Sc (IT)">B.Sc (IT)</option>
+
+                                <option value="BA">BA</option>
+
+                                <option value="BAMMC">BAMMC</option>
+
+                                <option value="BCom">BCom</option>
+
+                                <option value="BMS">BMS</option>
+
+                                <option value="BAF">BAF</option>
+
+                            </select>
+
+                        </div>
+
+                    )}
+
+                    {/* SEMESTER - For Degree College */}
+
+                    {form.college === "Degree College" && (
+
+                        <div>
+
+                            <label className="text-sm text-gray-600">
+
+                                Semester
+
+                            </label>
+
+                            <select
+
+                                name="semester"
+
+                                required
+
+                                value={form.semester}
+
+                                onChange={handleChange}
+
+                                className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
+
+                            >
+
+                                <option value="">
+
+                                    Select Semester
+
+                                </option>
+
+                                <option value="1">Semester 1</option>
+
+                                <option value="2">Semester 2</option>
+
+                                <option value="3">Semester 3</option>
+
+                                <option value="4">Semester 4</option>
+
+                                <option value="5">Semester 5</option>
+
+                                <option value="6">Semester 6</option>
+
+                            </select>
+
+                        </div>
+
+                    )}
 
                     {/* YOUTUBE */}
 

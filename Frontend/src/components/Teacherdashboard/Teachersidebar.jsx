@@ -12,7 +12,11 @@ export default function Teachersidebar() {
   };
 
   // Extract dynamic name from user email
-  const displayName = user?.email ? extractNameFromEmail(user.email) : 'Teacher';
+  const displayName = user?.fullName
+    ? user.fullName
+    : user?.email
+      ? extractNameFromEmail(user.email)
+      : 'Teacher';
 
   const menuItems = [
     { name: "Home", path: "/teacherdashboard", icon: <LayoutDashboard size={20} /> },
