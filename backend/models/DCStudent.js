@@ -16,7 +16,19 @@ const DCStudentSchema = new mongoose.Schema({
   },
   degree: {
     type: String,
-    required: true
+    required: true,
+    enum: ['B.Sc (CS)', 'B.Sc (IT)', 'BA', 'BAMMC', 'BCom', 'BMS', 'BAF']
+  },
+  year: {
+    type: String,
+    required: true,
+    enum: ['FY', 'SY', 'TY']
+  },
+  semester: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 6
   },
   role: {
     type: String,

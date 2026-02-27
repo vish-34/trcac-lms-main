@@ -92,10 +92,14 @@ router.post("/create-user", async (req, res) => {
       return res.status(403).json({ message: "Only admins can create users" });
     }
 
-    const { fullName, email, password, role, college, degree } = req.body;
+    const { fullName, email, password, role, college, degree, year, semester } = req.body;
 
-    if (!fullName || !email || !password || !role || !college) {
+    if (!fullName || !email || !password || !role || !college || (role === "student" && !year)) {
       return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    if (role === "student" && college === "Degree College" && !semester) {
+      return res.status(400).json({ message: "Semester is required for Degree College students" });
     }
 
     if (role !== "student" && role !== "teacher") {
@@ -139,7 +143,10 @@ router.post("/create-user", async (req, res) => {
       password: hashedPassword,
       role,
       college,
-      degree: role === "student" ? degree : undefined,
+      stream: role === "student" && college === "Junior College" ? degree : undefined,
+      degree: role === "student" && college === "Degree College" ? degree : undefined,
+      year: role === "student" ? year : undefined,
+      semester: role === "student" && college === "Degree College" ? semester : undefined,
       course: role === "teacher" ? degree : undefined,
       subject: role === "teacher" ? degree : undefined
     });
@@ -155,6 +162,7 @@ router.post("/create-user", async (req, res) => {
         role: newUser.role,
         college: newUser.college,
         degree: newUser.degree,
+        stream: newUser.stream,
         course: newUser.course,
         subject: newUser.subject
       }
@@ -224,6 +232,9 @@ router.post("/login", async (req, res) => {
         role: user.role,
         college: user.college,
         degree: user.degree,
+        stream: user.stream,
+        year: user.year,
+        semester: user.semester,
         userType
       }
     });

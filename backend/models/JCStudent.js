@@ -14,9 +14,15 @@ const JCStudentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  degree: {
+  stream: {
     type: String,
-    required: true
+    required: true,
+    enum: ['Commerce', 'Arts']
+  },
+  year: {
+    type: String,
+    required: true,
+    enum: ['FY', 'SY']
   },
   role: {
     type: String,

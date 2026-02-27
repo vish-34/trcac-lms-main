@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 
 import authRoutes from "./routes/auth.js";
 import lectureRoutes from "./routes/lectureRoutes.js";
+import subjectRoutes from "./routes/subject.js";
+import progressRoutes from "./routes/progressRoutes.js";
 
 dotenv.config();
 
@@ -53,6 +55,10 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 
 app.use("/api/lecture", lectureRoutes);
+
+app.use("/api/subjects", subjectRoutes);
+
+app.use("/api/progress", progressRoutes);
 
 // ======================
 // MONGODB CONNECTION
