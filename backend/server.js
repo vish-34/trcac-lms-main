@@ -55,9 +55,15 @@ const PORT = process.env.PORT || 5000;
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
+  'https://trcac-lms-main.vercel.app', // Production frontend URL
   'https://your-frontend-domain.com', // Replace with actual frontend domain
   process.env.FRONTEND_URL
 ].filter(Boolean);
+
+// For production, allow the specific frontend domain
+if (process.env.NODE_ENV === 'production') {
+  allowedOrigins.push('https://trcac-lms-main.vercel.app');
+}
 
 app.use(
   cors({
@@ -69,12 +75,15 @@ app.use(
         callback(null, true);
       } else {
         console.log(`CORS blocked for origin: ${origin}`);
+        console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
         callback(new Error('Not allowed by CORS'));
       }
     },
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
     maxAge: 86400, // 24 hours
+    preflightContinue: false,
+    optionsSuccessStatus: 204
   }),
 );
 

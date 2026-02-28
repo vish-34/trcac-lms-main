@@ -3,6 +3,7 @@ import axios from "axios";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useSearchParams } from "react-router-dom";
 import YouTube from "react-youtube";
+import { activityTracker } from "../../utils/activityTracker.js";
 
 export default function Lectures() {
 
@@ -14,6 +15,13 @@ export default function Lectures() {
     const [activeLectureId, setActiveLectureId] = useState(null);
     const [resumeAtSeconds, setResumeAtSeconds] = useState(0);
     const [player, setPlayer] = useState(null);
+
+    // Initialize activity tracker
+    useEffect(() => {
+        if (user) {
+            activityTracker.setUser(user);
+        }
+    }, [user]);
 
     // =================
     // VIDEO ID
@@ -297,16 +305,42 @@ text-gray-500
                                                 }}
 
                                                 onStateChange={async (event) => {
-                                                    if (event.data === 0) {
+                                                    // Track video progress for attendance
+                                                    if (event.data === 0 || event.data === 1 || event.data === 2) {
                                                         try {
+                                                            const currentTime = await event.target.getCurrentTime();
                                                             const duration = await event.target.getDuration();
-                                                            await saveProgress({
+                                                            
+                                                            // Calculate watch percentage
+                                                            const watchPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+                                                            
+                                                            // Track lecture viewing activity
+                                                            await activityTracker.trackLectureView(
+                                                                lecture._id,
+                                                                lecture.title,
+                                                                lecture.subject,
+                                                                currentTime,
+                                                                duration
+                                                            );
+                                                            
+                                                            console.log('Lecture activity tracked:', {
                                                                 lectureId: lecture._id,
-                                                                currentTime: duration,
-                                                                duration,
+                                                                title: lecture.title,
+                                                                watchPercentage: Math.round(watchPercentage),
+                                                                currentTime,
+                                                                duration
                                                             });
+                                                            
+                                                            // Save progress for resume functionality
+                                                            if (event.data === 0) {
+                                                                await saveProgress({
+                                                                    lectureId: lecture._id,
+                                                                    currentTime: duration,
+                                                                    duration,
+                                                                });
+                                                            }
                                                         } catch (err) {
-                                                            // ignore
+                                                            console.error('Error tracking lecture activity:', err);
                                                         }
                                                     }
                                                 }}
@@ -336,6 +370,38 @@ text-gray-500
                                                 className="absolute top-0 left-0 w-full h-full"
 
                                                 iframeClassName="w-full h-full"
+
+                                                onStateChange={async (event) => {
+                                                    // Track video progress for attendance
+                                                    if (event.data === 0 || event.data === 1 || event.data === 2) {
+                                                        try {
+                                                            const currentTime = await event.target.getCurrentTime();
+                                                            const duration = await event.target.getDuration();
+                                                            
+                                                            // Calculate watch percentage
+                                                            const watchPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+                                                            
+                                                            // Track lecture viewing activity
+                                                            await activityTracker.trackLectureView(
+                                                                lecture._id,
+                                                                lecture.title,
+                                                                lecture.subject,
+                                                                currentTime,
+                                                                duration
+                                                            );
+                                                            
+                                                            console.log('Lecture activity tracked (non-resume):', {
+                                                                lectureId: lecture._id,
+                                                                title: lecture.title,
+                                                                watchPercentage: Math.round(watchPercentage),
+                                                                currentTime,
+                                                                duration
+                                                            });
+                                                        } catch (err) {
+                                                            console.error('Error tracking lecture activity:', err);
+                                                        }
+                                                    }
+                                                }}
 
                                             />
 

@@ -291,6 +291,7 @@ router.get("/student/:studentId", async (req, res) => {
 router.get("/attendance/:studentId", async (req, res) => {
   try {
     const { studentId } = req.params;
+    console.log('Calculating attendance for student:', studentId);
 
     // Get all lecture viewing activities for this student
     const lectureActivities = await StudentActivity.find({
@@ -298,7 +299,10 @@ router.get("/attendance/:studentId", async (req, res) => {
       activityType: "lecture_viewed"
     }).lean();
 
+    console.log('Found lecture activities:', lectureActivities.length);
+
     if (lectureActivities.length === 0) {
+      console.log('No lecture activities found for student:', studentId);
       return res.json({
         attendance: 0,
         totalLectures: 0,
@@ -313,9 +317,14 @@ router.get("/attendance/:studentId", async (req, res) => {
     let watchedLectures = 0;
     const lectureDetails = [];
 
+    console.log('Processing lecture activities...');
     for (const activity of lectureActivities) {
+      console.log('Activity details:', activity.activityDetails);
+      
       const watchPercentage = activity.activityDetails?.watchPercentage || 0;
       totalWatchPercentage += watchPercentage;
+      
+      console.log(`Watch percentage: ${watchPercentage}`);
       
       if (watchPercentage > 0) {
         watchedLectures++;
@@ -335,6 +344,13 @@ router.get("/attendance/:studentId", async (req, res) => {
     const averageWatchPercentage = Math.round(totalWatchPercentage / lectureActivities.length);
     const attendance = averageWatchPercentage; // Attendance = average watch percentage
 
+    console.log('Final calculation:', {
+      totalWatchPercentage,
+      lectureCount: lectureActivities.length,
+      averageWatchPercentage,
+      attendance
+    });
+
     res.json({
       attendance,
       totalLectures: lectureActivities.length,
@@ -347,6 +363,43 @@ router.get("/attendance/:studentId", async (req, res) => {
   } catch (error) {
     console.error("Error calculating attendance:", error);
     res.status(500).json({ message: "Failed to calculate attendance" });
+  }
+});
+
+// ======================
+// DEBUG: GET ALL ACTIVITIES FOR A STUDENT
+// ======================
+router.get("/debug/:studentId", async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    console.log('Debug: Getting all activities for student:', studentId);
+
+    // Get ALL activities for this student
+    const allActivities = await StudentActivity.find({
+      studentId
+    }).lean();
+
+    console.log('All activities found:', allActivities.length);
+
+    // Group by activity type
+    const activitiesByType = {};
+    allActivities.forEach(activity => {
+      if (!activitiesByType[activity.activityType]) {
+        activitiesByType[activity.activityType] = [];
+      }
+      activitiesByType[activity.activityType].push(activity);
+    });
+
+    res.json({
+      studentId,
+      totalActivities: allActivities.length,
+      activitiesByType,
+      allActivities: allActivities.slice(0, 10) // First 10 for debugging
+    });
+
+  } catch (error) {
+    console.error("Error in debug endpoint:", error);
+    res.status(500).json({ message: "Debug endpoint failed" });
   }
 });
 

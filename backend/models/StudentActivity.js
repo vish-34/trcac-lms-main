@@ -20,11 +20,8 @@ const studentActivitySchema = new mongoose.Schema({
     enum: ['lecture_viewed', 'assignment_submitted', 'assignment_downloaded', 'login']
   },
   activityDetails: {
-    // For lecture viewing
-    lectureId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Lecture'
-    },
+    // Flexible object structure for different activity types
+    lectureId: String,
     lectureTitle: String,
     lectureSubject: String,
     watchDuration: Number, // in seconds
@@ -32,16 +29,16 @@ const studentActivitySchema = new mongoose.Schema({
     watchPercentage: Number,
     
     // For assignment activities
-    assignmentId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Assignment'
-    },
+    assignmentId: String,
     assignmentTitle: String,
     assignmentSubject: String,
     submissionStatus: {
       type: String,
       enum: ['submitted', 'downloaded']
-    }
+    },
+    
+    // Allow any additional properties
+    type: mongoose.Schema.Types.Mixed
   },
   college: {
     type: String,

@@ -24,16 +24,30 @@ export default function Home() {
     const fetchAttendance = async () => {
       try {
         const studentId = user?.id;
-        if (!studentId) return;
+        if (!studentId) {
+          console.log('No student ID found');
+          return;
+        }
 
+        console.log('Fetching attendance for student:', studentId);
         const res = await axios.get(
           `${import.meta.env.VITE_API_URL}/api/activity/attendance/${studentId}`,
         );
 
+        console.log('Attendance response:', res.data);
         setAttendance(res.data?.attendance || 0);
-        console.log('Attendance data:', res.data);
+        
+        // Log additional details for debugging
+        console.log('Attendance details:', {
+          attendance: res.data?.attendance,
+          totalLectures: res.data?.totalLectures,
+          watchedLectures: res.data?.watchedLectures,
+          averageWatchPercentage: res.data?.averageWatchPercentage,
+          message: res.data?.message
+        });
       } catch (err) {
         console.error('Error fetching attendance:', err);
+        console.error('Error response:', err.response?.data);
         setAttendance(0);
       } finally {
         setAttendanceLoading(false);
