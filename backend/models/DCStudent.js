@@ -30,6 +30,11 @@ const DCStudentSchema = new mongoose.Schema({
     min: 1,
     max: 6
   },
+  class: {
+    type: String,
+    required: true,
+    enum: ['FYBScCS', 'SYBScCS', 'TYBScCS', 'FYBMS', 'SYBMS', 'TYBMS', 'FYBCom', 'SYBCom', 'TYBCom', 'FYBAF', 'SYBAF', 'TYBAF']
+  },
   role: {
     type: String,
     default: 'student'

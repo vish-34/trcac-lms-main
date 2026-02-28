@@ -7,6 +7,10 @@ import authRoutes from "./routes/auth.js";
 import lectureRoutes from "./routes/lectureRoutes.js";
 import subjectRoutes from "./routes/subject.js";
 import progressRoutes from "./routes/progressRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import assignmentRoutes from "./routes/assignmentRoutes.js";
+import activityRoutes from "./routes/activityRoutes.js";
+import examRoutes from "./routes/examRoutes.js";
 
 dotenv.config();
 
@@ -60,6 +64,17 @@ app.use("/api/subjects", subjectRoutes);
 
 app.use("/api/progress", progressRoutes);
 
+app.use("/api/admin", adminRoutes);
+
+app.use("/api/assignments", assignmentRoutes);
+
+app.use("/api/activity", activityRoutes);
+
+app.use("/api/exams", examRoutes);
+
+// Serve uploaded files
+app.use("/uploads", express.static("uploads"));
+
 // ======================
 // MONGODB CONNECTION
 // ======================
@@ -67,20 +82,17 @@ app.use("/api/progress", progressRoutes);
 mongoose
   .connect(
     process.env.MONGO_URI,
-
     {
       serverSelectionTimeoutMS: 5000,
-    },
+    }
   )
-
   .then(() => {
     console.log("Connected to MongoDB Atlas ✅");
 
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
     });
   })
-
   .catch((error) => {
     console.error("MongoDB connection error:", error);
   });

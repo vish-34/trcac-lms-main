@@ -80,6 +80,9 @@ router.post("/register", async (req, res) => {
 =================================================== */
 router.post("/create-user", async (req, res) => {
   try {
+    console.log('User creation request received');
+    console.log('Request body:', req.body);
+    
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res.status(401).json({ message: "Admin authentication required" });
@@ -93,6 +96,8 @@ router.post("/create-user", async (req, res) => {
     }
 
     const { fullName, email, password, role, college, degree, year, semester } = req.body;
+
+    console.log('Parsed user data:', { fullName, email, role, college, degree, year, semester });
 
     if (!fullName || !email || !password || !role || !college || (role === "student" && !year)) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -137,6 +142,27 @@ router.post("/create-user", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Generate class name for students
+    let className = "";
+    if (role === "student") {
+      if (college === "Degree College") {
+        const degreeMappings = {
+          'B.Sc (CS)': 'BScCS',
+          'BMS': 'BMS',
+          'BCom': 'BCom',
+          'BAF': 'BAF'
+        };
+        const degreeCode = degreeMappings[degree];
+        if (degreeCode) {
+          className = `${year}${degreeCode}`;
+        }
+      } else if (college === "Junior College") {
+        className = `${year}JC`;
+      }
+    }
+
+    console.log('Generated class name:', className);
+
     const newUser = new UserModel({
       fullName: fullName.trim(),
       email: normalizedEmail,
@@ -147,11 +173,24 @@ router.post("/create-user", async (req, res) => {
       degree: role === "student" && college === "Degree College" ? degree : undefined,
       year: role === "student" ? year : undefined,
       semester: role === "student" && college === "Degree College" ? semester : undefined,
+      class: role === "student" ? className : undefined,
       course: role === "teacher" ? degree : undefined,
       subject: role === "teacher" ? degree : undefined
     });
 
+    console.log('Creating user with data:', {
+      fullName: newUser.fullName,
+      email: newUser.email,
+      role: newUser.role,
+      college: newUser.college,
+      class: newUser.class,
+      degree: newUser.degree,
+      year: newUser.year,
+      semester: newUser.semester
+    });
+
     await newUser.save();
+    console.log('User created successfully');
 
     res.status(201).json({
       message: "User created successfully",
@@ -180,7 +219,10 @@ router.post("/create-user", async (req, res) => {
 =================================================== */
 router.post("/login", async (req, res) => {
   try {
+    console.log('Login request received');
     const { email, password } = req.body;
+    
+    console.log('Login attempt for email:', email);
 
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -195,32 +237,51 @@ router.post("/login", async (req, res) => {
     let user = null;
     let userType = null;
 
+    console.log('Searching for user in collections...');
     for (const c of collections) {
-      const found = await c.model.findOne({ email: normalizedEmail });
-      if (found) {
-        user = found;
-        userType = c.type;
-        break;
+      try {
+        console.log(`Checking ${c.type} collection...`);
+        const found = await c.model.findOne({ email: normalizedEmail });
+        if (found) {
+          user = found;
+          userType = c.type;
+          console.log(`Found user in ${c.type}:`, found.fullName);
+          break;
+        }
+      } catch (error) {
+        console.error(`Error searching ${c.type}:`, error);
       }
     }
 
     if (!user) {
+      console.log('User not found in any collection');
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
+    console.log('Comparing password...');
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
+      console.log('Password comparison failed');
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    user.lastLogin = new Date();
-    await user.save();
+    console.log('Password valid, updating lastLogin...');
+    try {
+      user.lastLogin = new Date();
+      await user.save();
+      console.log('lastLogin updated successfully');
+    } catch (saveError) {
+      console.error('Error updating lastLogin:', saveError);
+      // Continue even if lastLogin update fails
+    }
 
     const token = jwt.sign(
       { userId: user._id, role: user.role, userType },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );
+
+    console.log('Login successful for:', user.fullName, 'as', userType);
 
     res.json({
       message: "Login successful",

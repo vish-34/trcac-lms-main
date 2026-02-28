@@ -24,6 +24,11 @@ const JCStudentSchema = new mongoose.Schema({
     required: true,
     enum: ['FY', 'SY']
   },
+  class: {
+    type: String,
+    required: true,
+    enum: ['FYJC', 'SYJC']
+  },
   role: {
     type: String,
     default: 'student'

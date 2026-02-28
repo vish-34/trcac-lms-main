@@ -22,7 +22,8 @@ router.post("/upsert", async (req, res) => {
     const safeCurrentTime = Number(currentTime || 0);
     const safeDuration = Number(duration || 0);
 
-    const completed = safeDuration > 0 ? safeCurrentTime >= safeDuration * 0.95 : false;
+    // Disable auto-completion - videos are never marked as complete
+    const completed = false;
 
     const progress = await WatchProgress.findOneAndUpdate(
       { studentId, lectureId },
@@ -52,8 +53,7 @@ router.get("/continue/:studentId", async (req, res) => {
 
     const progress = await WatchProgress.findOne({
       studentId,
-      completed: false,
-      currentTime: { $gt: 0 },
+      currentTime: { $gt: 0 }, // Remove completed filter - always show latest watched
     })
       .sort({ updatedAt: -1 })
       .lean();
@@ -81,6 +81,22 @@ router.get("/lecture/:studentId/:lectureId", async (req, res) => {
     const progress = await WatchProgress.findOne({ studentId, lectureId }).lean();
 
     res.json({ progress: progress || null });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ======================
+// DEBUG: GET ALL PROGRESS FOR STUDENT
+// ======================
+router.get("/debug/:studentId", async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    const allProgress = await WatchProgress.find({ studentId }).lean();
+
+    res.json({ progress: allProgress });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
