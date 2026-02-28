@@ -285,4 +285,69 @@ router.get("/student/:studentId", async (req, res) => {
   }
 });
 
+// ======================
+// GET STUDENT ATTENDANCE (BASED ON LECTURE WATCH PERCENTAGE)
+// ======================
+router.get("/attendance/:studentId", async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    // Get all lecture viewing activities for this student
+    const lectureActivities = await StudentActivity.find({
+      studentId,
+      activityType: "lecture_viewed"
+    }).lean();
+
+    if (lectureActivities.length === 0) {
+      return res.json({
+        attendance: 0,
+        totalLectures: 0,
+        watchedLectures: 0,
+        averageWatchPercentage: 0,
+        message: "No lecture activities found"
+      });
+    }
+
+    // Calculate attendance based on average watch percentage
+    let totalWatchPercentage = 0;
+    let watchedLectures = 0;
+    const lectureDetails = [];
+
+    for (const activity of lectureActivities) {
+      const watchPercentage = activity.activityDetails?.watchPercentage || 0;
+      totalWatchPercentage += watchPercentage;
+      
+      if (watchPercentage > 0) {
+        watchedLectures++;
+      }
+
+      lectureDetails.push({
+        lectureId: activity.activityDetails?.lectureId,
+        lectureTitle: activity.activityDetails?.lectureTitle,
+        lectureSubject: activity.activityDetails?.lectureSubject,
+        watchPercentage,
+        watchDuration: activity.activityDetails?.watchDuration,
+        totalDuration: activity.activityDetails?.totalDuration,
+        timestamp: activity.timestamp
+      });
+    }
+
+    const averageWatchPercentage = Math.round(totalWatchPercentage / lectureActivities.length);
+    const attendance = averageWatchPercentage; // Attendance = average watch percentage
+
+    res.json({
+      attendance,
+      totalLectures: lectureActivities.length,
+      watchedLectures,
+      averageWatchPercentage,
+      lectureDetails,
+      message: `Attendance calculated based on ${lectureActivities.length} lecture views`
+    });
+
+  } catch (error) {
+    console.error("Error calculating attendance:", error);
+    res.status(500).json({ message: "Failed to calculate attendance" });
+  }
+});
+
 export default router;

@@ -10,12 +10,38 @@ export default function Home() {
 
   const [continueLecture, setContinueLecture] = useState(null);
   const [continueProgress, setContinueProgress] = useState(null);
+  const [attendance, setAttendance] = useState(0);
+  const [attendanceLoading, setAttendanceLoading] = useState(true);
 
   const displayName = user?.fullName
     ? user.fullName
     : user?.email
       ? extractNameFromEmail(user.email)
       : "Student";
+
+  // Fetch attendance data
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      try {
+        const studentId = user?.id;
+        if (!studentId) return;
+
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/activity/attendance/${studentId}`,
+        );
+
+        setAttendance(res.data?.attendance || 0);
+        console.log('Attendance data:', res.data);
+      } catch (err) {
+        console.error('Error fetching attendance:', err);
+        setAttendance(0);
+      } finally {
+        setAttendanceLoading(false);
+      }
+    };
+
+    fetchAttendance();
+  }, [user]);
 
   useEffect(() => {
     const fetchContinue = async () => {
@@ -91,7 +117,7 @@ export default function Home() {
       >
         <StatCard
           title="Attendance"
-          value="87%"
+          value={attendanceLoading ? "Loading..." : `${attendance}%`}
           color="bg-yellow-100"
         />
 

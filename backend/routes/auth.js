@@ -8,6 +8,11 @@ import JCStudent from "../models/JCStudent.js";
 import DCTeacher from "../models/DCTeacher.js";
 import JCTeacher from "../models/JCTeacher.js";
 
+// Security imports
+import { 
+  validateUserRegistration, 
+} from "../middleware/security.js";
+
 const router = express.Router();
 
 /* ===================================================
@@ -223,8 +228,8 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
     
     console.log('Login attempt for email:', email);
-
     const normalizedEmail = email.trim().toLowerCase();
+    console.log('Normalized email:', normalizedEmail);
 
     const collections = [
       { model: User, type: "admin" },
@@ -242,14 +247,37 @@ router.post("/login", async (req, res) => {
       try {
         console.log(`Checking ${c.type} collection...`);
         const found = await c.model.findOne({ email: normalizedEmail });
+        console.log(`Query result for ${c.type}:`, found ? 'Found' : 'Not found');
         if (found) {
           user = found;
           userType = c.type;
-          console.log(`Found user in ${c.type}:`, found.fullName);
+          console.log(`Found user in ${c.type}:`, found.fullName, 'Email:', found.email);
           break;
         }
       } catch (error) {
         console.error(`Error searching ${c.type}:`, error);
+      }
+    }
+
+    // If not found with exact match, try case-insensitive search
+    if (!user) {
+      console.log('Trying case-insensitive search...');
+      for (const c of collections) {
+        try {
+          console.log(`Checking ${c.type} collection (case-insensitive)...`);
+          const found = await c.model.findOne({ 
+            $expr: { $eq: [{ $toLower: "$email" }, normalizedEmail] }
+          });
+          console.log(`Case-insensitive result for ${c.type}:`, found ? 'Found' : 'Not found');
+          if (found) {
+            user = found;
+            userType = c.type;
+            console.log(`Found user in ${c.type} (case-insensitive):`, found.fullName, 'Email:', found.email);
+            break;
+          }
+        } catch (error) {
+          console.error(`Error searching ${c.type} (case-insensitive):`, error);
+        }
       }
     }
 

@@ -13,6 +13,44 @@ const PendingAssignmentReviews = () => {
 
   console.log('PendingAssignmentReviews component rendering');
 
+  const handleViewSubmission = (assignmentId, submissionId) => {
+    // Check if pendingReviews exists and is an array
+    if (!pendingReviews || !Array.isArray(pendingReviews)) {
+      console.log('pendingReviews is not available:', pendingReviews);
+      return;
+    }
+    
+    console.log('Looking for assignmentId:', assignmentId, 'submissionId:', submissionId);
+    console.log('Available assignments:', pendingReviews.map(a => ({ id: a.assignmentId, title: a.title })));
+    
+    // Find the assignment and submission to remove
+    const assignmentIndex = pendingReviews.findIndex(a => a.assignmentId === assignmentId);
+    console.log('Found assignment index:', assignmentIndex);
+    
+    if (assignmentIndex !== -1) {
+      const updatedAssignment = { ...pendingReviews[assignmentIndex] };
+      const submissionIndex = updatedAssignment.pendingSubmissions.findIndex(s => s.studentId === submissionId);
+      console.log('Found submission index:', submissionIndex);
+      
+      if (submissionIndex !== -1) {
+        // Remove submission from the list
+        updatedAssignment.pendingSubmissions.splice(submissionIndex, 1);
+        
+        // Update state
+        const updatedReviews = [...pendingReviews];
+        if (updatedAssignment.pendingSubmissions.length === 0) {
+          // Remove entire assignment if no more submissions
+          updatedReviews.splice(assignmentIndex, 1);
+        } else {
+          updatedAssignment[assignmentIndex] = updatedAssignment;
+        }
+        
+        console.log('Updated reviews:', updatedReviews);
+        setPendingReviews(updatedReviews);
+      }
+    }
+  };
+
   useEffect(() => {
     fetchPendingReviews();
   }, [user]);
@@ -158,14 +196,17 @@ const PendingAssignmentReviews = () => {
                         <div className="text-right">
                           <p className="text-sm text-gray-500">{formatTimeAgo(submission.submittedAt)}</p>
                           {submission.fileUrl && (
-                            <a 
-                              href={`${import.meta.env.VITE_API_URL}${submission.fileUrl}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              onClick={() => {
+                                // Open file in new tab
+                                window.open(`${import.meta.env.VITE_API_URL}${submission.fileUrl}`, '_blank');
+                                // Remove from pending list
+                                handleViewSubmission(review.assignmentId, submission.studentId);
+                              }}
                               className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block"
                             >
                               View Submission
-                            </a>
+                            </button>
                           )}
                         </div>
                       </div>
@@ -173,7 +214,7 @@ const PendingAssignmentReviews = () => {
                   </div>
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <button 
-                      onClick={() => navigate('/teacherdashboard/assignments')}
+                      onClick={() => navigate('/teacherdashboard/assignment')}
                       className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                     >
                       Review All Submissions

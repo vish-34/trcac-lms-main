@@ -40,11 +40,11 @@ export default function Sidebar() {
       icon:<LayoutDashboard size={20}/>
     },
 
-    {
-      name:"Subjects",
-      path:"/studentdashboard/subjects",
-      icon:<BookOpen size={20}/>
-    },
+    // {
+    //   name:"Subjects",
+    //   path:"/studentdashboard/subjects",
+    //   icon:<BookOpen size={20}/>
+    // },
 
     {
       name:"Lectures",

@@ -4,6 +4,15 @@ import path from "path";
 import fs from "fs";
 import Assignment from "../models/Assignment.js";
 
+// Security imports
+import { 
+  validateAssignmentCreation, 
+  validateMongoId, 
+  handleValidationErrors,
+  fileFilter, 
+  fileLimits 
+} from "../middleware/security.js";
+
 // Helper function to map assignment class to degree and year
 const mapClassToDegreeYear = (className) => {
   const classMappings = {
@@ -92,7 +101,7 @@ const normalizeClassName = (className) => {
 
 const router = express.Router();
 
-// Configure multer for file uploads
+// Configure multer for file uploads with security
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(process.cwd(), "uploads", "assignments");
@@ -105,10 +114,20 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    // Create unique filename with timestamp
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
+    // Generate secure filename with timestamp and random string
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 15);
+    const originalName = file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
+    const filename = `${timestamp}_${randomString}_${originalName}`;
+    cb(null, filename);
   }
+});
+
+// Secure upload configuration
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: fileLimits
 });
 
 // Configure multer for submission uploads
@@ -127,23 +146,6 @@ const submissionStorage = multer.diskStorage({
     // Create unique filename with timestamp
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
     cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const fileFilter = (req, file, cb) => {
-  // Only allow PDF files
-  if (file.mimetype === "application/pdf") {
-    cb(null, true);
-  } else {
-    cb(new Error("Only PDF files are allowed"), false);
-  }
-};
-
-const upload = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
   }
 });
 
