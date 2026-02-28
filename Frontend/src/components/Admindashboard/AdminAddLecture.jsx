@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 
 export default function AdminAddLecture() {
 
@@ -19,9 +20,74 @@ export default function AdminAddLecture() {
 
     });
 
+    const [subjects, setSubjects] = useState([]);
+
     const [loading, setLoading] = useState(false);
 
     const [message, setMessage] = useState("");
+
+    useEffect(() => {
+
+        const fetchSubjects = async () => {
+
+            try {
+
+                if (!form.college || !form.year) {
+                    setSubjects([]);
+                    return;
+                }
+
+                let params = {};
+
+                if (form.college === "Degree College") {
+
+                    if (!form.degree || !form.semester) {
+                        setSubjects([]);
+                        return;
+                    }
+
+                    params = {
+                        collegeType: "degree",
+                        year: form.year,
+                        semester: form.semester,
+                        courseOrStream: form.degree
+                    };
+
+                }
+
+                else if (form.college === "Junior College") {
+
+                    if (!form.stream) {
+                        setSubjects([]);
+                        return;
+                    }
+
+                    params = {
+                        collegeType: "junior",
+                        year: form.year,
+                        courseOrStream: form.stream
+                    };
+
+                }
+
+                const res = await axios.get(
+                    `${import.meta.env.VITE_API_URL}/api/subjects/get-subjects`,
+                    { params }
+                );
+
+                if (res.data.success) {
+                    setSubjects(res.data.subjects);
+                }
+
+            } catch (error) {
+                console.log("Error fetching subjects:", error);
+            }
+
+        };
+
+        fetchSubjects();
+
+    }, [form.college, form.year, form.degree, form.stream, form.semester]);
 
 
     // HANDLE CHANGE
@@ -32,17 +98,23 @@ export default function AdminAddLecture() {
 
         setForm((prev) => {
 
-            const updatedForm = { ...prev, [name]: value };
+            const updated = { ...prev, [name]: value };
 
-            // Auto-set course based on college type and selection
-            if (name === 'degree' && prev.college === 'Degree College') {
-                updatedForm.course = value;
-            } else if (name === 'stream' && prev.college === 'Junior College') {
-                updatedForm.course = value;
+            if (
+                name === "college" ||
+                name === "year" ||
+                name === "degree" ||
+                name === "stream"
+            ) {
+                updated.subject = "";
             }
 
-            return updatedForm;
+            // Reset semester when year changes
+            if (name === "year") {
+                updated.semester = "";
+            }
 
+            return updated;
         });
 
     };
@@ -133,17 +205,12 @@ export default function AdminAddLecture() {
 
         <div className="space-y-8">
 
-
             {/* HEADER */}
 
             <motion.div
-
                 initial={{ opacity: 0, y: 20 }}
-
                 animate={{ opacity: 1, y: 0 }}
-
                 className="flex justify-between items-center"
-
             >
 
                 <div>
@@ -169,15 +236,10 @@ export default function AdminAddLecture() {
             {/* CARD */}
 
             <motion.div
-
                 initial={{ opacity: 0, y: 30 }}
-
                 animate={{ opacity: 1, y: 0 }}
-
                 className="bg-white rounded-2xl shadow p-8 space-y-6"
-
             >
-
 
                 {message && (
 
@@ -190,107 +252,13 @@ export default function AdminAddLecture() {
                 )}
 
 
-
                 <form
-
                     onSubmit={handleSubmit}
-
                     className="grid md:grid-cols-2 gap-6"
-
                 >
 
 
-                    {/* TITLE */}
-
-                    <div>
-
-                        <label className="text-sm text-gray-600">
-
-                            Lecture Title
-
-                        </label>
-
-                        <input
-
-                            name="title"
-
-                            required
-
-                            value={form.title}
-
-                            onChange={handleChange}
-
-                            placeholder="IP Addressing Basics"
-
-                            className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
-
-                        />
-
-                    </div>
-
-
-
-                    {/* SUBJECT */}
-
-                    <div>
-
-                        <label className="text-sm text-gray-600">
-
-                            Subject
-
-                        </label>
-
-                        <input
-
-                            name="subject"
-
-                            required
-
-                            value={form.subject}
-
-                            onChange={handleChange}
-
-                            placeholder="Computer Networks"
-
-                            className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
-
-                        />
-
-                    </div>
-
-
-
-                    {/* FACULTY NAME */}
-
-                    <div>
-
-                        <label className="text-sm text-gray-600">
-
-                            Faculty Name
-
-                        </label>
-
-                        <input
-
-                            name="facultyName"
-
-                            required
-
-                            value={form.facultyName}
-
-                            onChange={handleChange}
-
-                            placeholder="Prof Sharma"
-
-                            className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
-
-                        />
-
-                    </div>
-
-
-
-                    {/* COLLEGE */}
+                    {/* COLLEGE FIRST */}
 
                     <div>
 
@@ -303,11 +271,8 @@ export default function AdminAddLecture() {
                         <select
 
                             name="college"
-
                             required
-
                             value={form.college}
-
                             onChange={handleChange}
 
                             className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
@@ -320,13 +285,23 @@ export default function AdminAddLecture() {
 
                             </option>
 
-                            <option value="Degree College">Degree College</option>
+                            <option value="Degree College">
 
-                            <option value="Junior College">Junior College</option>
+                                Degree College
+
+                            </option>
+
+                            <option value="Junior College">
+
+                                Junior College
+
+                            </option>
 
                         </select>
 
                     </div>
+
+
 
                     {/* YEAR */}
 
@@ -343,11 +318,8 @@ export default function AdminAddLecture() {
                             <select
 
                                 name="year"
-
                                 required
-
                                 value={form.year}
-
                                 onChange={handleChange}
 
                                 className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
@@ -364,25 +336,51 @@ export default function AdminAddLecture() {
 
                                     <>
 
-                                        <option value="FY">First Year (FY)</option>
+                                        <option value="FYJC">
 
-                                        <option value="SY">Second Year (SY)</option>
+                                            FYJC
 
-                                    </>
+                                        </option>
 
-                                ) : (
+                                        <option value="SYJC">
 
-                                    <>
+                                            SYJC
 
-                                        <option value="FY">First Year (FY)</option>
-
-                                        <option value="SY">Second Year (SY)</option>
-
-                                        <option value="TY">Third Year (TY)</option>
+                                        </option>
 
                                     </>
 
-                                )}
+                                )
+
+                                    :
+
+                                    (
+
+                                        <>
+
+                                            <option value="FY">
+
+                                                First Year (FY)
+
+                                            </option>
+
+                                            <option value="SY">
+
+                                                Second Year (SY)
+
+                                            </option>
+
+                                            <option value="TY">
+
+                                                Third Year (TY)
+
+                                            </option>
+
+                                        </>
+
+                                    )
+
+                                }
 
                             </select>
 
@@ -390,7 +388,9 @@ export default function AdminAddLecture() {
 
                     )}
 
-                    {/* COURSE - For Junior College */}
+
+
+                    {/* STREAM */}
 
                     {form.college === "Junior College" && (
 
@@ -405,11 +405,8 @@ export default function AdminAddLecture() {
                             <select
 
                                 name="stream"
-
                                 required
-
                                 value={form.stream}
-
                                 onChange={handleChange}
 
                                 className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
@@ -422,9 +419,17 @@ export default function AdminAddLecture() {
 
                                 </option>
 
-                                <option value="Commerce">Commerce</option>
+                                <option value="Commerce">
 
-                                <option value="Arts">Arts</option>
+                                    Commerce
+
+                                </option>
+
+                                <option value="Arts">
+
+                                    Arts
+
+                                </option>
 
                             </select>
 
@@ -432,7 +437,9 @@ export default function AdminAddLecture() {
 
                     )}
 
-                    {/* COURSE - For Degree College */}
+
+
+                    {/* DEGREE */}
 
                     {form.college === "Degree College" && (
 
@@ -447,11 +454,8 @@ export default function AdminAddLecture() {
                             <select
 
                                 name="degree"
-
                                 required
-
                                 value={form.degree}
-
                                 onChange={handleChange}
 
                                 className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
@@ -464,75 +468,206 @@ export default function AdminAddLecture() {
 
                                 </option>
 
-                                <option value="B.Sc (CS)">B.Sc (CS)</option>
+                                <option value="B.Sc (CS)">
 
-                                <option value="B.Sc (IT)">B.Sc (IT)</option>
-
-                                <option value="BA">BA</option>
-
-                                <option value="BAMMC">BAMMC</option>
-
-                                <option value="BCom">BCom</option>
-
-                                <option value="BMS">BMS</option>
-
-                                <option value="BAF">BAF</option>
-
-                            </select>
-
-                        </div>
-
-                    )}
-
-                    {/* SEMESTER - For Degree College */}
-
-                    {form.college === "Degree College" && (
-
-                        <div>
-
-                            <label className="text-sm text-gray-600">
-
-                                Semester
-
-                            </label>
-
-                            <select
-
-                                name="semester"
-
-                                required
-
-                                value={form.semester}
-
-                                onChange={handleChange}
-
-                                className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
-
-                            >
-
-                                <option value="">
-
-                                    Select Semester
+                                    B.Sc (CS)
 
                                 </option>
 
-                                <option value="1">Semester 1</option>
+                                <option value="B.Sc (IT)">
 
-                                <option value="2">Semester 2</option>
+                                    B.Sc (IT)
 
-                                <option value="3">Semester 3</option>
+                                </option>
 
-                                <option value="4">Semester 4</option>
+                                <option value="BA">
 
-                                <option value="5">Semester 5</option>
+                                    BA
 
-                                <option value="6">Semester 6</option>
+                                </option>
+
+                                <option value="BAMMC">
+
+                                    BAMMC
+
+                                </option>
+
+                                <option value="BCom">
+
+                                    BCom
+
+                                </option>
+
+                                <option value="BMS">
+
+                                    BMS
+
+                                </option>
+
+                                <option value="BAF">
+
+                                    BAF
+
+                                </option>
 
                             </select>
 
                         </div>
 
                     )}
+
+                     {/* SEMESTER */}
+
+                    {form.college === "Degree College" && form.year && (
+
+                        <div>
+                            <label className="text-sm text-gray-600">
+                                Semester
+                            </label>
+
+                            <select
+                                name="semester"
+                                required
+                                value={form.semester}
+                                onChange={handleChange}
+                                className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
+                            >
+
+                                <option value="">
+                                    Select Semester
+                                </option>
+
+                                {form.year === "FY" && (
+                                    <>
+                                        <option value="1">Semester 1</option>
+                                        <option value="2">Semester 2</option>
+                                    </>
+                                )}
+
+                                {form.year === "SY" && (
+                                    <>
+                                        <option value="3">Semester 3</option>
+                                        <option value="4">Semester 4</option>
+                                    </>
+                                )}
+
+                                {form.year === "TY" && (
+                                    <>
+                                        <option value="5">Semester 5</option>
+                                        <option value="6">Semester 6</option>
+                                    </>
+                                )}
+
+                            </select>
+                        </div>
+
+                    )}
+
+
+
+
+                    {/* SUBJECT AFTER FILTERS */}
+
+                    <div>
+
+                        <label className="text-sm text-gray-600">
+
+                            Subject
+
+                        </label>
+
+                        <select
+
+                            name="subject"
+                            required
+                            value={form.subject}
+                            onChange={handleChange}
+
+                            className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
+
+                        >
+
+                            <option value="">
+
+                                Select Subject
+
+                            </option>
+
+                            {subjects.map(sub => (
+
+                                <option
+                                    key={sub._id}
+                                    value={sub.subjectName}
+                                >
+
+                                    {sub.subjectName}
+
+                                </option>
+
+                            ))}
+
+                        </select>
+
+                    </div>
+
+
+
+                    {/* TITLE */}
+
+                    <div>
+
+                        <label className="text-sm text-gray-600">
+
+                            Lecture Title
+
+                        </label>
+
+                        <input
+
+                            name="title"
+                            required
+                            value={form.title}
+                            onChange={handleChange}
+
+                            placeholder="IP Addressing Basics"
+
+                            className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
+
+                        />
+
+                    </div>
+
+
+
+                    {/* FACULTY */}
+
+                    <div>
+
+                        <label className="text-sm text-gray-600">
+
+                            Faculty Name
+
+                        </label>
+
+                        <input
+
+                            name="facultyName"
+                            required
+                            value={form.facultyName}
+                            onChange={handleChange}
+
+                            placeholder="Prof Sharma"
+
+                            className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
+
+                        />
+
+                    </div>
+
+
+
+                   
+
 
                     {/* YOUTUBE */}
 
@@ -547,11 +682,8 @@ export default function AdminAddLecture() {
                         <input
 
                             name="youtubeLink"
-
                             required
-
                             value={form.youtubeLink}
-
                             onChange={handleChange}
 
                             placeholder="https://youtube.com/watch?v=..."
@@ -571,14 +703,21 @@ export default function AdminAddLecture() {
                         <button
 
                             type="submit"
-
                             disabled={loading}
 
                             className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg font-medium"
 
                         >
 
-                            {loading ? "Uploading..." : "Add Lecture"}
+                            {loading ?
+
+                                "Uploading..."
+
+                                :
+
+                                "Add Lecture"
+
+                            }
 
                         </button>
 
@@ -590,6 +729,5 @@ export default function AdminAddLecture() {
 
         </div>
 
-    );
-
-}
+    )
+};

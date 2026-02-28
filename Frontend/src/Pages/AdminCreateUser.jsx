@@ -16,7 +16,7 @@ export default function AdminCreateUser() {
     }
   }, [adminUser, isAuthenticated, loading, navigate]);
 
-  // 📝 FORM STATE
+  // 📝 FORM STATE (Semester Removed)
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -24,8 +24,7 @@ export default function AdminCreateUser() {
     role: "student",
     college: "Degree College",
     degree: "",
-    year: "",
-    semester: ""
+    year: ""
   });
 
   const [formLoading, setFormLoading] = useState(false);
@@ -96,7 +95,8 @@ export default function AdminCreateUser() {
           password: "",
           role: "student",
           college: "Degree College",
-          degree: ""
+          degree: "",
+          year: ""
         });
       } else {
         setError(data.message || "Failed to create user.");
@@ -104,14 +104,14 @@ export default function AdminCreateUser() {
     } catch (err) {
       console.error("Create user error:", err);
       setError(
-        "Network error while creating user. Please check your connection and try again."
+        "Network error while creating user. Please check your connection."
       );
     } finally {
       setFormLoading(false);
     }
   };
 
-  // ⏳ Show loading during auth check
+  // ⏳ Auth loading
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -121,21 +121,24 @@ export default function AdminCreateUser() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br  relative overflow-hidden">
-      {/* Background Blurs */}
-      <div className="absolute w-[500px] h-[500px] bg-white blur-[120px] opacity-30 -top-20 -left-20" />
-      <div className="absolute w-[400px] h-[400px] bg-white blur-[120px] opacity-30 bottom-0 right-0" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8 relative overflow-hidden">
+
+      {/* Background blur */}
+      <div className="absolute w-[500px] h-[500px] bg-indigo-200 blur-[140px] opacity-20 -top-20 -left-20" />
+      <div className="absolute w-[400px] h-[400px] bg-indigo-200 blur-[140px] opacity-20 bottom-0 right-0" />
 
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="bg-white/80 backdrop-blur-xl shadow-xl rounded-3xl p-10 w-[420px] border border-gray-100"
+        transition={{ duration: 0.5 }}
+        className="bg-white/90 backdrop-blur-xl shadow-xl rounded-3xl w-full max-w-xl max-h-[92vh] overflow-y-auto border border-gray-100 p-6 sm:p-10"
       >
-        <h1 className="text-2xl font-semibold text-center mb-2">
+
+        <h1 className="text-xl sm:text-2xl font-semibold text-center mb-2">
           Create New User
         </h1>
-        <p className="text-center text-gray-500 mb-8">
+
+        <p className="text-center text-gray-500 mb-6">
           Create student or teacher accounts
         </p>
 
@@ -153,18 +156,15 @@ export default function AdminCreateUser() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
 
-          {/* FULL NAME */}
           <input
             name="fullName"
-            type="text"
             placeholder="Full Name"
             value={formData.fullName}
             required
             onChange={handleChange}
-            className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500"
           />
 
-          {/* EMAIL */}
           <input
             name="email"
             type="email"
@@ -172,10 +172,9 @@ export default function AdminCreateUser() {
             value={formData.email}
             required
             onChange={handleChange}
-            className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500"
           />
 
-          {/* PASSWORD */}
           <input
             name="password"
             type="password"
@@ -183,10 +182,10 @@ export default function AdminCreateUser() {
             value={formData.password}
             required
             onChange={handleChange}
-            className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500"
           />
 
-          {/* ROLE SELECTOR */}
+          {/* ROLE SWITCH */}
           <div className="flex bg-gray-100 rounded-full p-1">
             {["student", "teacher"].map((r) => (
               <button
@@ -212,58 +211,54 @@ export default function AdminCreateUser() {
             value={formData.college}
             onChange={handleChange}
             required
-            className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500"
           >
             <option value="">Select College</option>
             <option value="Degree College">Degree College</option>
             <option value="Junior College">Junior College</option>
           </select>
 
-          {/* DEGREE/STREAM (Only Student) */}
-          {formData.role === "student" && formData.college === "Junior College" && (
+          {/* DEGREE / STREAM */}
+          {formData.role === "student" && (
             <select
               name="degree"
               value={formData.degree}
               onChange={handleChange}
               required
-              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500"
             >
-              <option value="">Select Stream</option>
-              <option value="Commerce">Commerce</option>
-              <option value="Arts">Arts</option>
+              <option value="">Select {formData.college === "Junior College" ? "Stream" : "Degree"}</option>
+
+              {formData.college === "Junior College" ? (
+                <>
+                  <option value="Commerce">Commerce</option>
+                  <option value="Arts">Arts</option>
+                </>
+              ) : (
+                <>
+                  <option value="B.Sc (CS)">B.Sc (CS)</option>
+                  <option value="B.Sc (IT)">B.Sc (IT)</option>
+                  <option value="BA">BA</option>
+                  <option value="BAMMC">BAMMC</option>
+                  <option value="BCom">BCom</option>
+                  <option value="BMS">BMS</option>
+                  <option value="BAF">BAF</option>
+                </>
+              )}
             </select>
           )}
 
-          {/* DEGREE (Only Student - Degree College) */}
-          {formData.role === "student" && formData.college === "Degree College" && (
-            <select
-              name="degree"
-              value={formData.degree}
-              onChange={handleChange}
-              required
-              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
-            >
-              <option value="">Select Degree</option>
-              <option value="B.Sc (CS)">B.Sc (CS)</option>
-              <option value="B.Sc (IT)">B.Sc (IT)</option>
-              <option value="BA">BA</option>
-              <option value="BAMMC">BAMMC</option>
-              <option value="BCom">BCom</option>
-              <option value="BMS">BMS</option>
-              <option value="BAF">BAF</option>
-            </select>
-          )}
-
-          {/* YEAR (Only Student) */}
+          {/* YEAR */}
           {formData.role === "student" && formData.college && (
             <select
               name="year"
               value={formData.year}
               onChange={handleChange}
               required
-              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500"
             >
               <option value="">Select Year</option>
+
               {formData.college === "Junior College" ? (
                 <>
                   <option value="FY">First Year (FY)</option>
@@ -271,74 +266,40 @@ export default function AdminCreateUser() {
                 </>
               ) : (
                 <>
-                  <option value="FY">First Year (FY)</option>
-                  <option value="SY">Second Year (SY)</option>
-                  <option value="TY">Third Year (TY)</option>
+                  <option value="FY">First Year</option>
+                  <option value="SY">Second Year</option>
+                  <option value="TY">Third Year</option>
                 </>
               )}
             </select>
           )}
 
-          {/* SEMESTER (Only for Degree College Students) */}
-          {formData.role === "student" && formData.college === "Degree College" && (
-            <select
-              name="semester"
-              value={formData.semester}
-              onChange={handleChange}
-              required
-              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
-            >
-              <option value="">Select Semester</option>
-              <option value="1">Semester 1</option>
-              <option value="2">Semester 2</option>
-              <option value="3">Semester 3</option>
-              <option value="4">Semester 4</option>
-              <option value="5">Semester 5</option>
-              <option value="6">Semester 6</option>
-            </select>
-          )}
-
-          {/* SUBJECT (Only Teacher) */}
+          {/* TEACHER SUBJECT */}
           {formData.role === "teacher" && (
             <input
               name="degree"
-              type="text"
-              placeholder="Subject (e.g., Computer Networks)"
+              placeholder="Subject"
               value={formData.degree}
               onChange={handleChange}
               required
-              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500"
             />
           )}
 
-          {/* SUBMIT */}
           <button
             type="submit"
             disabled={formLoading}
-            className={`w-full py-3 rounded-full font-semibold text-sm transition ${
+            className={`w-full py-3 rounded-full font-semibold transition ${
               formLoading
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : " text-white bg-indigo-600 hover:bg-indigo-700"
+                ? "bg-gray-300"
+                : "bg-indigo-600 hover:bg-indigo-700 text-white"
             }`}
           >
             {formLoading ? "Creating User..." : `Create ${formData.role}`}
           </button>
+
         </form>
 
-        <div className="mt-6 text-center space-y-2">
-          <a
-            href="/admindashboard"
-            className="text-sm text-gray-600 hover:text-gray-800 block"
-          >
-            ← Back to Admin Dashboard
-          </a>
-          <a
-            href="/admin-login"
-            className="text-sm text-gray-600 hover:text-gray-800 block"
-          >
-            Admin Login
-          </a>
-        </div>
       </motion.div>
     </div>
   );

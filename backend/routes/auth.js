@@ -8,15 +8,10 @@ import JCStudent from "../models/JCStudent.js";
 import DCTeacher from "../models/DCTeacher.js";
 import JCTeacher from "../models/JCTeacher.js";
 
-// Security imports
-import { 
-  validateUserRegistration, 
-} from "../middleware/security.js";
-
 const router = express.Router();
 
 /* ===================================================
-   REGISTER (ADMIN ONLY)
+   REGISTER ADMIN
 =================================================== */
 router.post("/register", async (req, res) => {
   try {
@@ -33,23 +28,6 @@ router.post("/register", async (req, res) => {
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ message: "Email already exists" });
-    }
-
-    const adminCount = await User.countDocuments({ role: "admin" });
-    const token = req.headers.authorization?.split(" ")[1];
-
-    // If not first admin, require authentication
-    if (adminCount > 0) {
-      if (!token) {
-        return res.status(403).json({ message: "Admin authentication required" });
-      }
-
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const adminUser = await User.findById(decoded.userId);
-
-      if (!adminUser || adminUser.role !== "admin") {
-        return res.status(403).json({ message: "Only admins can create admin accounts" });
-      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -81,13 +59,10 @@ router.post("/register", async (req, res) => {
 
 
 /* ===================================================
-   ADMIN CREATE USER (STUDENTS / TEACHERS ONLY)
+   ADMIN CREATE USER
 =================================================== */
 router.post("/create-user", async (req, res) => {
   try {
-    console.log('User creation request received');
-    console.log('Request body:', req.body);
-    
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res.status(401).json({ message: "Admin authentication required" });
@@ -100,16 +75,14 @@ router.post("/create-user", async (req, res) => {
       return res.status(403).json({ message: "Only admins can create users" });
     }
 
-    const { fullName, email, password, role, college, degree, year, semester } = req.body;
+    const { fullName, email, password, role, college, degree, year } = req.body;
 
-    console.log('Parsed user data:', { fullName, email, role, college, degree, year, semester });
-
-    if (!fullName || !email || !password || !role || !college || (role === "student" && !year)) {
+    if (!fullName || !email || !password || !role || !college) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    if (role === "student" && college === "Degree College" && !semester) {
-      return res.status(400).json({ message: "Semester is required for Degree College students" });
+    if (role === "student" && !year) {
+      return res.status(400).json({ message: "Year is required for students" });
     }
 
     if (role !== "student" && role !== "teacher") {
@@ -147,8 +120,9 @@ router.post("/create-user", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate class name for students
+    // Generate class name
     let className = "";
+
     if (role === "student") {
       if (college === "Degree College") {
         const degreeMappings = {
@@ -157,16 +131,15 @@ router.post("/create-user", async (req, res) => {
           'BCom': 'BCom',
           'BAF': 'BAF'
         };
+
         const degreeCode = degreeMappings[degree];
         if (degreeCode) {
           className = `${year}${degreeCode}`;
         }
-      } else if (college === "Junior College") {
+      } else {
         className = `${year}JC`;
       }
     }
-
-    console.log('Generated class name:', className);
 
     const newUser = new UserModel({
       fullName: fullName.trim(),
@@ -177,25 +150,12 @@ router.post("/create-user", async (req, res) => {
       stream: role === "student" && college === "Junior College" ? degree : undefined,
       degree: role === "student" && college === "Degree College" ? degree : undefined,
       year: role === "student" ? year : undefined,
-      semester: role === "student" && college === "Degree College" ? semester : undefined,
       class: role === "student" ? className : undefined,
       course: role === "teacher" ? degree : undefined,
       subject: role === "teacher" ? degree : undefined
     });
 
-    console.log('Creating user with data:', {
-      fullName: newUser.fullName,
-      email: newUser.email,
-      role: newUser.role,
-      college: newUser.college,
-      class: newUser.class,
-      degree: newUser.degree,
-      year: newUser.year,
-      semester: newUser.semester
-    });
-
     await newUser.save();
-    console.log('User created successfully');
 
     res.status(201).json({
       message: "User created successfully",
@@ -206,9 +166,7 @@ router.post("/create-user", async (req, res) => {
         role: newUser.role,
         college: newUser.college,
         degree: newUser.degree,
-        stream: newUser.stream,
-        course: newUser.course,
-        subject: newUser.subject
+        stream: newUser.stream
       }
     });
 
@@ -224,12 +182,8 @@ router.post("/create-user", async (req, res) => {
 =================================================== */
 router.post("/login", async (req, res) => {
   try {
-    console.log('Login request received');
     const { email, password } = req.body;
-    
-    console.log('Login attempt for email:', email);
     const normalizedEmail = email.trim().toLowerCase();
-    console.log('Normalized email:', normalizedEmail);
 
     const collections = [
       { model: User, type: "admin" },
@@ -242,74 +196,32 @@ router.post("/login", async (req, res) => {
     let user = null;
     let userType = null;
 
-    console.log('Searching for user in collections...');
     for (const c of collections) {
-      try {
-        console.log(`Checking ${c.type} collection...`);
-        const found = await c.model.findOne({ email: normalizedEmail });
-        console.log(`Query result for ${c.type}:`, found ? 'Found' : 'Not found');
-        if (found) {
-          user = found;
-          userType = c.type;
-          console.log(`Found user in ${c.type}:`, found.fullName, 'Email:', found.email);
-          break;
-        }
-      } catch (error) {
-        console.error(`Error searching ${c.type}:`, error);
-      }
-    }
-
-    // If not found with exact match, try case-insensitive search
-    if (!user) {
-      console.log('Trying case-insensitive search...');
-      for (const c of collections) {
-        try {
-          console.log(`Checking ${c.type} collection (case-insensitive)...`);
-          const found = await c.model.findOne({ 
-            $expr: { $eq: [{ $toLower: "$email" }, normalizedEmail] }
-          });
-          console.log(`Case-insensitive result for ${c.type}:`, found ? 'Found' : 'Not found');
-          if (found) {
-            user = found;
-            userType = c.type;
-            console.log(`Found user in ${c.type} (case-insensitive):`, found.fullName, 'Email:', found.email);
-            break;
-          }
-        } catch (error) {
-          console.error(`Error searching ${c.type} (case-insensitive):`, error);
-        }
+      const found = await c.model.findOne({ email: normalizedEmail });
+      if (found) {
+        user = found;
+        userType = c.type;
+        break;
       }
     }
 
     if (!user) {
-      console.log('User not found in any collection');
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    console.log('Comparing password...');
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      console.log('Password comparison failed');
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    console.log('Password valid, updating lastLogin...');
-    try {
-      user.lastLogin = new Date();
-      await user.save();
-      console.log('lastLogin updated successfully');
-    } catch (saveError) {
-      console.error('Error updating lastLogin:', saveError);
-      // Continue even if lastLogin update fails
-    }
+    user.lastLogin = new Date();
+    await user.save();
 
     const token = jwt.sign(
       { userId: user._id, role: user.role, userType },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );
-
-    console.log('Login successful for:', user.fullName, 'as', userType);
 
     res.json({
       message: "Login successful",
@@ -323,7 +235,6 @@ router.post("/login", async (req, res) => {
         degree: user.degree,
         stream: user.stream,
         year: user.year,
-        semester: user.semester,
         userType
       }
     });
@@ -346,6 +257,7 @@ router.get("/verify", async (req, res) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
     const collections = [
       { model: User, type: "admin" },
       { model: DCStudent, type: "DCStudent" },
@@ -356,24 +268,14 @@ router.get("/verify", async (req, res) => {
 
     let user = null;
 
-    if (decoded.userType) {
-      const match = collections.find((c) => c.type === decoded.userType);
-      if (match) {
-        user = await match.model.findById(decoded.userId).select("-password");
-      }
+    const match = collections.find((c) => c.type === decoded.userType);
+    if (match) {
+      user = await match.model.findById(decoded.userId).select("-password");
     }
 
     if (!user) {
-      for (const c of collections) {
-        const found = await c.model.findById(decoded.userId).select("-password");
-        if (found) {
-          user = found;
-          break;
-        }
-      }
+      return res.status(401).json({ message: "Invalid token" });
     }
-
-    if (!user) return res.status(401).json({ message: "Invalid token" });
 
     res.json({
       user: {
