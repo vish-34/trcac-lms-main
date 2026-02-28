@@ -1,5 +1,8 @@
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext.jsx";
+import RecentStudentActivity from "../../components/Teacherdashboard/RecentStudentActivity.jsx";
+import PendingAssignmentReviews from "../../components/Teacherdashboard/PendingAssignmentReviews.jsx";
+import UpcomingTests from "../../components/Teacherdashboard/UpcomingTests.jsx";
 
 export default function TeacherHome() {
   const { user, extractNameFromEmail } = useAuth();
@@ -26,8 +29,8 @@ export default function TeacherHome() {
           </p>
         </div>
         <img
-          src="https://illustrations.popsy.co/purple/teacher-explaining.svg"
-          className="h-28"
+          src="https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"
+          className="h-28 rounded-full"
         />
       </motion.div>
 
@@ -56,73 +59,15 @@ export default function TeacherHome() {
 
       {/* SECOND ROW */}
       <div className="grid grid-cols-2 gap-6">
-        {/* PENDING ASSIGNMENTS */}
-        <div className="bg-white rounded-xl shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">
-            Pending Assignment Reviews
-          </h2>
-          <div className="space-y-3">
-            <ActivityCard
-              title="DBMS Assignment 3"
-              desc="15 submissions pending"
-            />
-            <ActivityCard
-              title="Computer Networks"
-              desc="8 submissions pending"
-            />
-            <ActivityCard
-              title="Java Practical"
-              desc="12 submissions pending"
-            />
-          </div>
-        </div>
+        {/* PENDING ASSIGNMENT REVIEWS */}
+        <PendingAssignmentReviews />
 
         {/* UPCOMING TESTS */}
-        <div className="bg-white rounded-xl shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">
-            Upcoming Tests
-          </h2>
-          <div className="space-y-3">
-            <TestCard
-              subject="Computer Networks"
-              date="Friday"
-            />
-            <TestCard
-              subject="Operating Systems"
-              date="Monday"
-            />
-            <TestCard
-              subject="DBMS"
-              date="Next Week"
-            />
-          </div>
-        </div>
+        <UpcomingTests />
       </div>
 
       {/* RECENT STUDENT ACTIVITY */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">
-          Recent Student Activity
-        </h2>
-        <div className="bg-white rounded-xl shadow p-6 space-y-3">
-          <ActivityCard
-            title="Rahul Sharma submitted DBMS Assignment"
-            desc="10 mins ago"
-          />
-          <ActivityCard
-            title="Sneha attended Lecture 5"
-            desc="1 hour ago"
-          />
-          <ActivityCard
-            title="Akash completed Quiz"
-            desc="Today"
-          />
-          <ActivityCard
-            title="Priya uploaded Practical File"
-            desc="Yesterday"
-          />
-        </div>
-      </div>
+      <RecentStudentActivity />
     </div>
   );
 }

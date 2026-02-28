@@ -35,7 +35,7 @@ export default function Teachersidebar() {
               {displayName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h2 className="font-bold text-slate-800 leading-tight">Welcome back, {displayName}</h2>
+              <h2 className="font-bold text-slate-800 leading-tight">{displayName}</h2>
               <p className="text-xs font-medium text-indigo-600">Teacher</p>
             </div>
           </div>
@@ -47,6 +47,7 @@ export default function Teachersidebar() {
             <NavLink
               key={item.path}
               to={item.path}
+              end = {true}
               className={({ isActive }) => 
                 `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                   isActive 

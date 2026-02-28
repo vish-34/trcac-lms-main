@@ -188,6 +188,7 @@ export default function Adminsidebar() {
                 key={item.path}
 
                 to={item.path}
+                end={item.path === "/admindashboard"}
 
                 onClick={()=>setOpen(false)}
 

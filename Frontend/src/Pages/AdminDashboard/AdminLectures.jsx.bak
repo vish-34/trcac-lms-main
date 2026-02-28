@@ -384,6 +384,7 @@ time={new Date(l.createdAt).toLocaleString()}
 
 ))}
 
+</div>
 
 </div>
 
@@ -391,7 +392,8 @@ time={new Date(l.createdAt).toLocaleString()}
 
 {/* DELETE CONFIRM MODAL */}
 {deleteModal.open && (
-<div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 h-full -translate-y-8">    <motion.div
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <motion.div
       initial={{scale:0.95,opacity:0}}
       animate={{scale:1,opacity:1}}
       exit={{scale:0.95,opacity:0}}

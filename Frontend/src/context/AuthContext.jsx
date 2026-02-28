@@ -192,6 +192,15 @@ export const AuthProvider = ({ children }) => {
           storeToken(data.token);
           storeUser(data.user);
           console.log('Login successful, user:', data.user);
+          
+          // Track login activity for students
+          if (data.user?.role === 'student') {
+            import('../utils/activityTracker.js').then(({ default: activityTracker }) => {
+              activityTracker.setUser(data.user);
+              activityTracker.trackLogin();
+            }).catch(err => console.log('Failed to track login:', err));
+          }
+          
           return { success: true, user: data.user };
         } else {
           throw new Error('Invalid token received from server');

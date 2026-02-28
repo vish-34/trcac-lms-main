@@ -11,12 +11,13 @@ import AdminDashboard from './Pages/AdminDashboard/AdminDashboard.jsx';
 import Dashboard from './Pages/StudentDashboard/Dashboard.jsx';
 import StudentHome from './Pages/StudentDashboard/Home.jsx';
 import StudentLectures from './Pages/StudentDashboard/Lectures.jsx';
-import StudentAssignment from './Pages/StudentDashboard/Assignment.jsx';
+import StudentAssignment from './Pages/StudentDashboard/Assignments.jsx';
+import StudentSubmitAssignment from './Pages/StudentDashboard/SubmitAssignment.jsx';
 import StudentSubjects from './Pages/StudentDashboard/Subjects.jsx';
 import TeacherDashboard from './Pages/TeacherDashboard/TeacherDashboard.jsx';
 import TeacherHome from './Pages/TeacherDashboard/TeacherHome.jsx';
 import TeacherLectures from './Pages/TeacherDashboard/TeacherLectures.jsx';
-import TeacherAssignment from './Pages/TeacherDashboard/TeacherAssignment.jsx';
+import TeacherAssignment from './Pages/TeacherDashboard/Assignments.jsx';
 import TeacherExams from './Pages/TeacherDashboard/TeacherExams.jsx';
 import AdminHome from './Pages/AdminDashboard/AdminHome.jsx';
 import AdminLectures from './Pages/AdminDashboard/AdminLectures.jsx';
@@ -129,6 +130,7 @@ const AppRoutes = () => {
         <Route index element={<StudentHome />} />
         <Route path="lectures" element={<StudentLectures />} />
         <Route path="assignment" element={<StudentAssignment />} />
+        <Route path="assignment/submit/:assignmentId" element={<StudentSubmitAssignment />} />
         <Route path="subjects" element={<StudentSubjects />} />
       </Route>
       

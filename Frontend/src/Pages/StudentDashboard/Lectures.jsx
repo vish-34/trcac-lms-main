@@ -214,6 +214,7 @@ space-y-4
                             {/* SUBJECT + FACULTY */}
 
                             <div
+
                                 className="
 flex
 flex-col
@@ -267,6 +268,7 @@ text-gray-500
                                                         modestbranding: 1,
                                                         playsinline: 1,
                                                         start: resumeAtSeconds || 0,
+                                                        autoplay: 1,
                                                     },
                                                 }}
 
@@ -280,9 +282,17 @@ text-gray-500
                                                     if (resumeAtSeconds && resumeAtSeconds > 0) {
                                                         try {
                                                             event.target.seekTo(resumeAtSeconds, true);
+                                                            console.log(`Resuming video at ${resumeAtSeconds} seconds`);
                                                         } catch (err) {
-                                                            // ignore
+                                                            console.error("Failed to seek to resume point:", err);
                                                         }
+                                                    }
+                                                    
+                                                    // Auto-play video when ready
+                                                    try {
+                                                        await event.target.playVideo();
+                                                    } catch (err) {
+                                                        console.error("Failed to auto-play:", err);
                                                     }
                                                 }}
 

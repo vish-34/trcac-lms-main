@@ -4,8 +4,10 @@ import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function AdminCredentials() {
   const [activeTab, setActiveTab] = useState("teacher");
+  const [studentSubTab, setStudentSubTab] = useState("degree");
   const [teachers, setTeachers] = useState([]);
-  const [students, setStudents] = useState([]);
+  const [degreeStudents, setDegreeStudents] = useState([]);
+  const [juniorStudents, setJuniorStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,7 +17,7 @@ export default function AdminCredentials() {
   /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
     fetchUsers();
-  }, [activeTab]);
+  }, [activeTab, studentSubTab]);
 
   const fetchUsers = async () => {
     try {
@@ -43,7 +45,10 @@ export default function AdminCredentials() {
       if (activeTab === "teacher") {
         setTeachers(data.teachers || []);
       } else {
-        setStudents(data.students || []);
+        // Split students by college type
+        const allStudents = data.students || [];
+        setDegreeStudents(allStudents.filter(s => s.college === "Degree College"));
+        setJuniorStudents(allStudents.filter(s => s.college === "Junior College"));
       }
     } catch (err) {
       console.error(err);
@@ -70,10 +75,16 @@ export default function AdminCredentials() {
   const currentData =
     activeTab === "teacher"
       ? filterUsers(teachers)
-      : filterUsers(students);
+      : studentSubTab === "degree"
+      ? filterUsers(degreeStudents)
+      : filterUsers(juniorStudents);
 
   const totalCount =
-    activeTab === "teacher" ? teachers.length : students.length;
+    activeTab === "teacher" 
+      ? teachers.length 
+      : studentSubTab === "degree"
+      ? degreeStudents.length
+      : juniorStudents.length;
 
   /* ---------------- ACTIONS ---------------- */
   const handleEdit = (user) => {
@@ -100,7 +111,11 @@ export default function AdminCredentials() {
       if (activeTab === "teacher") {
         setTeachers((prev) => prev.filter((u) => u._id !== userId));
       } else {
-        setStudents((prev) => prev.filter((u) => u._id !== userId));
+        if (studentSubTab === "degree") {
+          setDegreeStudents((prev) => prev.filter((u) => u._id !== userId));
+        } else {
+          setJuniorStudents((prev) => prev.filter((u) => u._id !== userId));
+        }
       }
     } catch (err) {
       alert("Failed to remove user");
@@ -149,6 +164,25 @@ export default function AdminCredentials() {
         ))}
       </div>
 
+      {/* STUDENT SUBTABS */}
+      {activeTab === "student" && (
+        <div className="flex bg-gray-100 rounded-full p-1 w-[400px]">
+          {["degree", "junior"].map((subTab) => (
+            <button
+              key={subTab}
+              onClick={() => setStudentSubTab(subTab)}
+              className={`w-1/2 py-2 rounded-full transition ${
+                studentSubTab === subTab
+                  ? "bg-white shadow font-medium"
+                  : "text-gray-500"
+              }`}
+            >
+              {subTab === "degree" ? "Degree College" : "Junior College"}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* SEARCH */}
       <input
         type="text"
@@ -176,7 +210,9 @@ export default function AdminCredentials() {
               <tr>
                 <th className="p-4 text-left">Full Name</th>
                 <th className="p-4 text-left">Email</th>
-                <th className="p-4 text-left">Course / Degree</th>
+                <th className="p-4 text-left">
+                {activeTab === "student" && studentSubTab === "junior" ? "Stream" : "Course / Degree"}
+              </th>
                 <th className="p-4 text-left">Actions</th>
               </tr>
             </thead>
@@ -186,7 +222,10 @@ export default function AdminCredentials() {
                   <td className="p-4 font-medium">{user.fullName}</td>
                   <td className="p-4">{user.email}</td>
                   <td className="p-4">
-                    {user.course || user.subject || user.degree || "—"}
+                    {activeTab === "student" && studentSubTab === "junior"
+                      ? user.stream || "—"
+                      : user.course || user.subject || user.degree || "—"
+                    }
                   </td>
                   <td className="p-4 space-x-3">
                     <button

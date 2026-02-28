@@ -54,9 +54,9 @@ export default function AdminHome(){
 
         <img
 
-          src="https://illustrations.popsy.co/purple/online-admin.svg"
+          src="https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"
 
-          className="h-20 sm:h-28 w-auto shrink-0"
+          className="h-20 rounded-full sm:h-28 w-auto shrink-0"
 
           alt="admin illustration"
 
