@@ -3,7 +3,7 @@ import axios from "axios";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useSearchParams } from "react-router-dom";
 import YouTube from "react-youtube";
-import { activityTracker } from "../../utils/activityTracker.js";
+import activityTracker from "../../utils/activityTracker.js";
 
 export default function Lectures() {
 
@@ -19,9 +19,73 @@ export default function Lectures() {
     // Initialize activity tracker
     useEffect(() => {
         if (user) {
+            console.log('Lectures: Setting user in activity tracker', user);
             activityTracker.setUser(user);
+        } else {
+            console.log('Lectures: No user available for activity tracker');
         }
     }, [user]);
+
+    // Test function for manual activity tracking
+    const testActivityTracking = async () => {
+        console.log('Testing activity tracking...');
+        try {
+            await activityTracker.trackLectureView(
+                'test-lecture-id',
+                'Test Lecture',
+                'Test Subject',
+                30, // 30 seconds watched
+                60  // 60 seconds total
+            );
+            console.log('Test activity tracking completed');
+        } catch (error) {
+            console.error('Test activity tracking failed:', error);
+        }
+    };
+
+    // Timer-based tracking for continuous progress updates
+    useEffect(() => {
+        let trackingInterval;
+        
+        if (activeLectureId && player) {
+            trackingInterval = setInterval(async () => {
+                try {
+                    const lecture = lectures.find(l => l._id === activeLectureId);
+                    if (lecture && player.getCurrentTime && player.getDuration) {
+                        const currentTime = await player.getCurrentTime();
+                        const duration = await player.getDuration();
+                        
+                        if (duration > 0) {
+                            const watchPercentage = (currentTime / duration) * 100;
+                            
+                            console.log('Timer-based tracking:', {
+                                lectureId: lecture._id,
+                                currentTime,
+                                duration,
+                                watchPercentage: Math.round(watchPercentage)
+                            });
+                            
+                            await activityTracker.trackLectureView(
+                                lecture._id,
+                                lecture.title,
+                                lecture.subject,
+                                currentTime,
+                                duration
+                            );
+                        }
+                    }
+                } catch (error) {
+                    console.error('Timer-based tracking error:', error);
+                }
+            }, 10000); // Track every 10 seconds
+        }
+        
+        return () => {
+            if (trackingInterval) {
+                clearInterval(trackingInterval);
+            }
+        };
+    }, [activeLectureId, player, lectures]);
 
     // =================
     // VIDEO ID
@@ -306,6 +370,7 @@ text-gray-500
 
                                                 onStateChange={async (event) => {
                                                     // Track video progress for attendance
+                                                    // Track on playing (1), paused (2), and ended (0) states
                                                     if (event.data === 0 || event.data === 1 || event.data === 2) {
                                                         try {
                                                             const currentTime = await event.target.getCurrentTime();
@@ -313,6 +378,14 @@ text-gray-500
                                                             
                                                             // Calculate watch percentage
                                                             const watchPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+                                                            
+                                                            console.log('YouTube state changed:', {
+                                                                state: event.data,
+                                                                stateName: ['ended', 'playing', 'paused', 'buffering', 'cued'][event.data] || 'unknown',
+                                                                currentTime,
+                                                                duration,
+                                                                watchPercentage: Math.round(watchPercentage)
+                                                            });
                                                             
                                                             // Track lecture viewing activity
                                                             await activityTracker.trackLectureView(
@@ -373,6 +446,7 @@ text-gray-500
 
                                                 onStateChange={async (event) => {
                                                     // Track video progress for attendance
+                                                    // Track on playing (1), paused (2), and ended (0) states
                                                     if (event.data === 0 || event.data === 1 || event.data === 2) {
                                                         try {
                                                             const currentTime = await event.target.getCurrentTime();
@@ -380,6 +454,14 @@ text-gray-500
                                                             
                                                             // Calculate watch percentage
                                                             const watchPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+                                                            
+                                                            console.log('YouTube state changed (non-resume):', {
+                                                                state: event.data,
+                                                                stateName: ['ended', 'playing', 'paused', 'buffering', 'cued'][event.data] || 'unknown',
+                                                                currentTime,
+                                                                duration,
+                                                                watchPercentage: Math.round(watchPercentage)
+                                                            });
                                                             
                                                             // Track lecture viewing activity
                                                             await activityTracker.trackLectureView(
@@ -440,6 +522,20 @@ text-gray-500
 
                 }
 
+            </div>
+
+            {/* Test Button for Debugging */}
+            <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+                <h3 className="text-sm font-semibold mb-2">Debug Tools</h3>
+                <button
+                    onClick={testActivityTracking}
+                    className="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600"
+                >
+                    Test Activity Tracking
+                </button>
+                <p className="text-xs text-gray-600 mt-2">
+                    Click to test if activity tracking is working
+                </p>
             </div>
 
         </div>

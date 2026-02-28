@@ -15,6 +15,8 @@ const getStudentModel = (college) => {
 // ======================
 router.post("/track", async (req, res) => {
   try {
+    console.log('Activity tracking request received:', req.body);
+    
     const {
       studentId,
       activityType,
@@ -25,15 +27,43 @@ router.post("/track", async (req, res) => {
       ipAddress
     } = req.body;
 
+    console.log('Parsed activity data:', {
+      studentId,
+      activityType,
+      activityDetails,
+      college,
+      studentClass
+    });
+
+    console.log('Full request body:', JSON.stringify(req.body, null, 2));
+
     if (!studentId || !activityType || !college || !studentClass) {
-      return res.status(400).json({ message: "Missing required fields" });
+      console.log('Missing required fields:', { 
+        studentId: !!studentId, 
+        activityType: !!activityType, 
+        college: !!college, 
+        studentClass: !!studentClass 
+      });
+      return res.status(400).json({ 
+        message: "Missing required fields",
+        missing: {
+          studentId: !studentId,
+          activityType: !activityType,
+          college: !college,
+          studentClass: !studentClass
+        }
+      });
     }
 
     // Get student information
     const StudentModel = getStudentModel(college);
+    console.log('Looking for student with model:', StudentModel.modelName, 'ID:', studentId);
     const student = await StudentModel.findById(studentId);
     
+    console.log('Student found:', student ? 'Yes' : 'No');
+    
     if (!student) {
+      console.log('Student not found for ID:', studentId, 'in college:', college);
       return res.status(404).json({ message: "Student not found" });
     }
 
@@ -342,7 +372,7 @@ router.get("/attendance/:studentId", async (req, res) => {
     }
 
     const averageWatchPercentage = Math.round(totalWatchPercentage / lectureActivities.length);
-    const attendance = averageWatchPercentage; // Attendance = average watch percentage
+    const attendance = Math.round(averageWatchPercentage); // Ensure clean integer percentage
 
     console.log('Final calculation:', {
       totalWatchPercentage,

@@ -120,7 +120,8 @@ app.use("/api/assignments", uploadLimiter, assignmentRoutes);
 app.use("/api/exams", uploadLimiter, examRoutes);
 
 // Apply activity rate limiting to activity tracking
-app.use("/api/activity", activityLimiter, activityRoutes);
+// app.use("/api/activity", activityLimiter, activityRoutes);
+app.use("/api/activity", activityRoutes);
 
 // Other routes with general rate limiting
 app.use("/api/lecture", lectureRoutes);

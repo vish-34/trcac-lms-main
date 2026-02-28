@@ -19,6 +19,12 @@ export default function Home() {
       ? extractNameFromEmail(user.email)
       : "Student";
 
+  // Helper function to format attendance percentage
+  const formatAttendance = (value) => {
+    const rounded = Math.round(value);
+    return `${rounded}%`;
+  };
+
   // Fetch attendance data
   useEffect(() => {
     const fetchAttendance = async () => {
@@ -35,11 +41,13 @@ export default function Home() {
         );
 
         console.log('Attendance response:', res.data);
-        setAttendance(res.data?.attendance || 0);
+        const attendanceValue = res.data?.attendance || 0;
+        const roundedAttendance = Math.round(attendanceValue);
+        setAttendance(roundedAttendance);
         
         // Log additional details for debugging
         console.log('Attendance details:', {
-          attendance: res.data?.attendance,
+          attendance: roundedAttendance,
           totalLectures: res.data?.totalLectures,
           watchedLectures: res.data?.watchedLectures,
           averageWatchPercentage: res.data?.averageWatchPercentage,
@@ -131,7 +139,7 @@ export default function Home() {
       >
         <StatCard
           title="Attendance"
-          value={attendanceLoading ? "Loading..." : `${attendance}%`}
+          value={attendanceLoading ? "Loading..." : formatAttendance(attendance)}
           color="bg-yellow-100"
         />
 
