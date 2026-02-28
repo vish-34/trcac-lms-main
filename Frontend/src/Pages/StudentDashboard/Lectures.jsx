@@ -525,7 +525,7 @@ text-gray-500
             </div>
 
             {/* Test Button for Debugging */}
-            <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+            {/* <div className="mt-4 p-4 bg-gray-100 rounded-lg">
                 <h3 className="text-sm font-semibold mb-2">Debug Tools</h3>
                 <button
                     onClick={testActivityTracking}
@@ -536,7 +536,7 @@ text-gray-500
                 <p className="text-xs text-gray-600 mt-2">
                     Click to test if activity tracking is working
                 </p>
-            </div>
+            </div> */}
 
         </div>
 
