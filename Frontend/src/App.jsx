@@ -24,6 +24,8 @@ import AdminLectures from './Pages/AdminDashboard/AdminLectures.jsx';
 import AdminCredentials from './Pages/AdminDashboard/AdminCredentials.jsx';
 import UserManagement from './Pages/AdminDashboard/UserManagement.jsx';
 import AdminAddLecture from './components/Admindashboard/AdminAddLecture.jsx';
+import AdminSubjects from './Pages/AdminDashboard/AdminSubjects.jsx';
+import AdminAddSubjects from './Pages/AdminDashboard/AdminAddSubjects.jsx';
 
 // Navigation Guard Component
 const NavigationGuard = ({ children }) => {
@@ -160,9 +162,11 @@ const AppRoutes = () => {
       >
         <Route index element={<AdminHome />} />
         <Route path="lectures" element={<AdminLectures />} />
+        <Route path="subjects" element={<AdminSubjects />} />
         <Route path="credentials" element={<AdminCredentials />} />
         <Route path="users" element={<UserManagement />} />
         <Route path="addlectures" element={<AdminAddLecture />} />
+        <Route path="addsubjects" element={<AdminAddSubjects />} />
       </Route>
       
       {/* Catch all route */}

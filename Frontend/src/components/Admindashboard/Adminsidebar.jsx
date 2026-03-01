@@ -51,6 +51,12 @@ export default function Adminsidebar() {
       name:"Lectures",
       path:"/admindashboard/lectures",
       icon:<FileText size={20}/>
+    },
+    
+    {
+      name:"Subjects",
+      path:"/admindashboard/subjects",
+      icon:<FileText size={20}/>
     }
 
   ];

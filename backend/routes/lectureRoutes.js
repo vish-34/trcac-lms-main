@@ -1,5 +1,7 @@
 import express from "express";
 import Lecture from "../models/Lecture.js";
+import DCStudent from "../models/DCStudent.js";
+import JCStudent from "../models/JCStudent.js";
 
 const router = express.Router();
 
@@ -25,9 +27,10 @@ router.post("/add", async (req, res) => {
       semester,
     } = req.body;
 
-    const course = bodyCourse || (college === "Junior College" ? stream : degree);
+    const course =
+      bodyCourse || (college === "Junior College" ? stream : degree);
 
-    console.log('Received lecture data:', {
+    console.log("Received lecture data:", {
       title,
       subject,
       facultyName,
@@ -36,7 +39,7 @@ router.post("/add", async (req, res) => {
       year,
       stream,
       degree,
-      semester
+      semester,
     });
 
     // ======================
@@ -101,7 +104,7 @@ router.post("/add", async (req, res) => {
       lectureData.semester = semester;
     }
 
-    console.log('Clean lecture data:', lectureData);
+    console.log("Clean lecture data:", lectureData);
 
     // ======================
     // SAVE
@@ -171,62 +174,38 @@ router.delete("/delete/:id", async (req, res) => {
 // ======================
 
 router.get("/student/:studentId", async (req, res) => {
+
   try {
+
     const { studentId } = req.params;
-    
-    // For now, use mock student profile. In production, fetch from database
-    const mockStudentProfile = {
-      college: 'Degree College',
-      course: 'B.Sc (CS)',
-      year: 'FY',
-      semester: 1
-    };
+    const { semester } = req.query;
 
-    // Build filter based on student profile
-    let filter = {
-      college: mockStudentProfile.college,
-      year: mockStudentProfile.year
-    };
+    let student = await DCStudent.findById(studentId);
 
-    // Add course-specific filters
-    if (mockStudentProfile.college === 'Junior College') {
-      filter.stream = mockStudentProfile.course; // For JC, course is stream
-    } else {
-      filter.degree = mockStudentProfile.course; // For DC, course is degree
-      filter.semester = mockStudentProfile.semester; // Add semester filter for DC
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
     }
 
-    const lectures = await Lecture.find(filter).sort({
-      createdAt: -1,
-    });
+    if (!semester) {
+      return res.status(400).json({ message: "Semester required" });
+    }
+
+    const filter = {
+      college: student.college,
+      degree: student.degree,
+      year: student.year,
+      semester: Number(semester)
+    };
+
+    const lectures = await Lecture.find(filter).sort({ createdAt: -1 });
 
     res.json(lectures);
+
   } catch (error) {
     console.log(error);
-
-    res.status(500).json({
-      message: "Error fetching lectures",
-    });
+    res.status(500).json({ message: "Error fetching lectures" });
   }
-});
 
-// Legacy route for backward compatibility
-router.get("/student/:className", async (req, res) => {
-  try {
-    const lectures = await Lecture.find({
-      className: req.params.className,
-    }).sort({
-      createdAt: -1,
-    });
-
-    res.json(lectures);
-  } catch (error) {
-    console.log(error);
-
-    res.status(500).json({
-      message: "Error fetching lectures",
-    });
-  }
 });
 
 export default router;

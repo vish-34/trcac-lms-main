@@ -16,12 +16,13 @@ import {
 
 import authRoutes from "./routes/auth.js";
 import lectureRoutes from "./routes/lectureRoutes.js";
-import subjectRoutes from "./routes/subject.js";
+// import subjectRoutes from "./routes/subject.js";
 import progressRoutes from "./routes/progressRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import assignmentRoutes from "./routes/assignmentRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
 import examRoutes from "./routes/examRoutes.js";
+import subjectRoutes from "./routes/subjectRoutes.js";
 
 dotenv.config();
 
@@ -131,6 +132,7 @@ app.use("/api/lecture", lectureRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/subjects", subjectRoutes);
 
 // ======================
 // SECURE FILE SERVING

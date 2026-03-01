@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import SubjectSlider from "../../components/Studentdashboard/SubjectSlider.jsx";
 
 export default function Home() {
   const { user, extractNameFromEmail } = useAuth();
@@ -94,7 +95,7 @@ export default function Home() {
 
   return (
     <div className="space-y-8 px-2 sm:px-0">
-
+      
       {/* GREETING HERO */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -224,9 +225,11 @@ export default function Home() {
           </div>
         )}
       </div>
+      <SubjectSlider/>
     </div>
   );
 }
+
 
 function StatCard({ title, value, color }) {
   return (

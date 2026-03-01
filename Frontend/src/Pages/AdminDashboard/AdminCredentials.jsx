@@ -128,9 +128,9 @@ export default function AdminCredentials() {
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">User Credentials Management</h1>
-        <button className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700">
+        {/* <button className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700">
           + Add {activeTab === "teacher" ? "Teacher" : "Student"}
-        </button>
+        </button> */}
       </div>
 
       {/* STATS */}

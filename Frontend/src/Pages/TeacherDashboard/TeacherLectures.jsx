@@ -2,160 +2,187 @@ import { motion } from "framer-motion";
 
 export default function TeacherLectures() {
 
-    const lectures = [
+  const lectures = [
 
-        {
-            id: 1,
-            topic: "IP Addressing",
-            subject: "Computer Networks",
-            date: "20 Feb",
-            duration: "1 Hr",
-            attendance: "87%"
-        },
+    {
+      id: 1,
+      topic: "IP Addressing",
+      subject: "Computer Networks",
+      date: "20 Feb",
+      duration: "1 Hr",
+      attendance: "87%"
+    },
 
-        {
-            id: 2,
-            topic: "Normalization",
-            subject: "DBMS",
-            date: "21 Feb",
-            duration: "2 Hr",
-            attendance: "90%"
-        },
+    {
+      id: 2,
+      topic: "Normalization",
+      subject: "DBMS",
+      date: "21 Feb",
+      duration: "2 Hr",
+      attendance: "90%"
+    },
 
-        {
-            id: 3,
-            topic: "Java OOP Concepts",
-            subject: "Java",
-            date: "22 Feb",
-            duration: "1.5 Hr",
-            attendance: "80%"
-        }
+    {
+      id: 3,
+      topic: "Java OOP Concepts",
+      subject: "Java",
+      date: "22 Feb",
+      duration: "1.5 Hr",
+      attendance: "80%"
+    }
 
-    ];
+  ];
 
 
-    return (
+  return (
 
-        <div className="space-y-8">
+    <div className="space-y-8 px-4 sm:px-6 md:px-8 pt-14 md:pt-0">
 
-            <h1 className="text-2xl font-semibold">
+      {/* HEADER */}
 
-                Lectures Review
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
-            </h1>
+        <h1 className="text-xl sm:text-2xl font-semibold">
 
+          Lectures Review
 
-            {/* SUMMARY */}
+        </h1>
 
-            <div className="grid grid-cols-3 gap-5">
+      </div>
 
-                <StatCard title="Total Lectures" value="36" color="bg-indigo-100" />
 
-                <StatCard title="This Week" value="5 Done" color="bg-purple-100" />
+      {/* SUMMARY */}
 
-                <StatCard title="Avg Attendance" value="85%" color="bg-green-100" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
 
-            </div>
+        <StatCard
+          title="Total Lectures"
+          value="36"
+          color="bg-indigo-100"
+        />
 
+        <StatCard
+          title="This Week"
+          value="5 Done"
+          color="bg-purple-100"
+        />
 
+        <StatCard
+          title="Avg Attendance"
+          value="85%"
+          color="bg-green-100"
+        />
 
-            {/* TABLE */}
+      </div>
 
-            <motion.div
 
-                initial={{ opacity: 0, y: 20 }}
 
-                animate={{ opacity: 1, y: 0 }}
+      {/* TABLE */}
 
-                className="bg-white rounded-xl shadow overflow-hidden"
+      <motion.div
 
-            >
+        initial={{ opacity: 0, y: 20 }}
 
-                <table className="w-full text-left">
+        animate={{ opacity: 1, y: 0 }}
 
-                    <thead className="bg-gray-50">
+        className="bg-white rounded-xl shadow overflow-hidden"
 
-                        <tr>
+      >
 
-                            <th className="p-4">Topic</th>
+        {/* scroll wrapper */}
 
-                            <th>Subject</th>
+        <div className="overflow-x-auto">
 
-                            <th>Date</th>
+          <table className="min-w-[700px] w-full text-left text-sm">
 
-                            <th>Duration</th>
+            <thead className="bg-gray-50 text-gray-600">
 
-                            <th>Attendance</th>
+              <tr>
 
-                            <th>Action</th>
+                <th className="p-4">Topic</th>
 
-                        </tr>
+                <th>Subject</th>
 
-                    </thead>
+                <th>Date</th>
 
-                    <tbody>
+                <th>Duration</th>
 
-                        {lectures.map((l) => (
+                <th>Attendance</th>
 
-                            <tr key={l.id} className="border-t">
+                <th className="pr-4">Action</th>
 
-                                <td className="p-4 font-medium">
+              </tr>
 
-                                    {l.topic}
+            </thead>
 
-                                </td>
+            <tbody>
 
-                                <td>
+              {lectures.map((l) => (
 
-                                    {l.subject}
+                <tr
+                  key={l.id}
+                  className="border-t hover:bg-gray-50 transition"
+                >
 
-                                </td>
+                  <td className="p-4 font-medium break-words">
 
-                                <td>
+                    {l.topic}
 
-                                    {l.date}
+                  </td>
 
-                                </td>
+                  <td>
 
-                                <td>
+                    {l.subject}
 
-                                    {l.duration}
+                  </td>
 
-                                </td>
+                  <td>
 
-                                <td>
+                    {l.date}
 
-                                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full">
+                  </td>
 
-                                        {l.attendance}
+                  <td>
 
-                                    </span>
+                    {l.duration}
 
-                                </td>
+                  </td>
 
-                                <td>
+                  <td>
 
-                                    <button className="text-indigo-600">
+                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
 
-                                        View Details
+                      {l.attendance}
 
-                                    </button>
+                    </span>
 
-                                </td>
+                  </td>
 
-                            </tr>
+                  <td className="pr-4">
 
-                        ))}
+                    <button className="text-indigo-600 hover:text-indigo-800 font-medium">
 
-                    </tbody>
+                      View Details
 
-                </table>
+                    </button>
 
-            </motion.div>
+                  </td>
+
+                </tr>
+
+              ))}
+
+            </tbody>
+
+          </table>
 
         </div>
 
-    );
+      </motion.div>
+
+    </div>
+
+  );
 
 }
 
@@ -163,24 +190,24 @@ export default function TeacherLectures() {
 
 function StatCard({ title, value, color }) {
 
-    return (
+  return (
 
-        <div className={`${color} rounded-xl p-5`}>
+    <div className={`${color} rounded-xl p-5`}>
 
-            <p className="text-sm text-gray-600">
+      <p className="text-sm text-gray-600">
 
-                {title}
+        {title}
 
-            </p>
+      </p>
 
-            <h2 className="text-xl font-semibold mt-2">
+      <h2 className="text-xl font-semibold mt-2">
 
-                {value}
+        {value}
 
-            </h2>
+      </h2>
 
-        </div>
+    </div>
 
-    );
+  );
 
 }
