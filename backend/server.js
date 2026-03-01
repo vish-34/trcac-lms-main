@@ -38,8 +38,8 @@ const app = express();
 // Apply security headers
 app.use(securityHeaders);
 
-// Apply general rate limiting
-app.use(generalLimiter);
+// Apply general rate limiting - DISABLED
+// app.use(generalLimiter);
 
 // ======================
 // PORT
@@ -109,17 +109,20 @@ app.get("/", (req, res) => {
 });
 
 // ======================
-// RATE LIMITED ROUTES
+// RATE LIMITED ROUTES (DISABLED)
 // ======================
 
-// Apply strict rate limiting to authentication routes
-app.use("/api/auth", authLimiter, authRoutes);
+// Apply strict rate limiting to authentication routes - DISABLED
+// app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/auth", authRoutes);
 
-// Apply upload rate limiting to assignment and exam routes that handle file uploads
-app.use("/api/assignments", uploadLimiter, assignmentRoutes);
-app.use("/api/exams", uploadLimiter, examRoutes);
+// Apply upload rate limiting to assignment and exam routes that handle file uploads - DISABLED
+// app.use("/api/assignments", uploadLimiter, assignmentRoutes);
+// app.use("/api/exams", uploadLimiter, examRoutes);
+app.use("/api/assignments", assignmentRoutes);
+app.use("/api/exams", examRoutes);
 
-// Apply activity rate limiting to activity tracking
+// Apply activity rate limiting to activity tracking - DISABLED
 // app.use("/api/activity", activityLimiter, activityRoutes);
 app.use("/api/activity", activityRoutes);
 

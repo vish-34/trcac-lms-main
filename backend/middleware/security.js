@@ -3,98 +3,110 @@ import helmet from 'helmet';
 import { body, param, query, validationResult } from 'express-validator';
 
 // ======================
-// RATE LIMITING MIDDLEWARE
+// RATE LIMITING MIDDLEWARE (DISABLED)
 // ======================
 
-// General rate limiting for all endpoints
-export const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: {
-    error: 'Too many requests from this IP, please try again later.',
-    retryAfter: '15 minutes'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  // Skip successful requests (less than 400 status code)
-  skipSuccessfulRequests: false,
-  // Skip failed requests
-  skipFailedRequests: false,
-  // Custom handler for rate limit exceeded
-  handler: (req, res, next) => {
-    console.log(`Rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
-    res.status(429).json({
-      error: 'Too many requests',
-      message: 'Rate limit exceeded. Please try again later.',
-      retryAfter: Math.ceil(15 * 60), // 15 minutes in seconds
-      timestamp: new Date().toISOString()
-    });
-  }
-});
+// General rate limiting for all endpoints - DISABLED
+// export const generalLimiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 100, // Limit each IP to 100 requests per windowMs
+//   message: {
+//     error: 'Too many requests from this IP, please try again later.',
+//     retryAfter: '15 minutes'
+//   },
+//   standardHeaders: true,
+//   legacyHeaders: false,
+//   // Skip successful requests (less than 400 status code)
+//   skipSuccessfulRequests: false,
+//   // Skip failed requests
+//   skipFailedRequests: false,
+//   // Custom handler for rate limit exceeded
+//   handler: (req, res, next) => {
+//     console.log(`Rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
+//     res.status(429).json({
+//       error: 'Too many requests',
+//       message: 'Rate limit exceeded. Please try again later.',
+//       retryAfter: Math.ceil(15 * 60), // 15 minutes in seconds
+//       timestamp: new Date().toISOString()
+//     });
+//   }
+// });
 
-// Strict rate limiting for authentication endpoints
-export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 auth requests per windowMs
-  message: {
-    error: 'Too many authentication attempts, please try again later.',
-    retryAfter: '15 minutes'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: false,
-  handler: (req, res, next) => {
-    console.log(`Auth rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
-    res.status(429).json({
-      error: 'Too many authentication attempts',
-      message: 'Too many login/registration attempts. Please try again later.',
-      retryAfter: Math.ceil(15 * 60),
-      timestamp: new Date().toISOString()
-    });
-  }
-});
+// Export empty general limiter to avoid breaking imports
+export const generalLimiter = (req, res, next) => next();
 
-// Rate limiting for file uploads
-export const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20, // Limit each IP to 20 uploads per hour
-  message: {
-    error: 'Too many file uploads, please try again later.',
-    retryAfter: '1 hour'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res, next) => {
-    console.log(`Upload rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
-    res.status(429).json({
-      error: 'Too many file uploads',
-      message: 'Upload limit exceeded. Please try again later.',
-      retryAfter: Math.ceil(60 * 60),
-      timestamp: new Date().toISOString()
-    });
-  }
-});
+// Strict rate limiting for authentication endpoints - DISABLED
+// export const authLimiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 5, // Limit each IP to 5 auth requests per windowMs
+//   message: {
+//     error: 'Too many authentication attempts, please try again later.',
+//     retryAfter: '15 minutes'
+//   },
+//   standardHeaders: true,
+//   legacyHeaders: false,
+//   skipSuccessfulRequests: false,
+//   handler: (req, res, next) => {
+//     console.log(`Auth rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
+//     res.status(429).json({
+//       error: 'Too many authentication attempts',
+//       message: 'Too many login/registration attempts. Please try again later.',
+//       retryAfter: Math.ceil(15 * 60),
+//       timestamp: new Date().toISOString()
+//     });
+//   }
+// });
 
-// Rate limiting for activity tracking
-export const activityLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30, // Limit each IP to 30 activity requests per minute
-  message: {
-    error: 'Too many activity requests, please try again later.',
-    retryAfter: '1 minute'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res, next) => {
-    console.log(`Activity rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
-    res.status(429).json({
-      error: 'Too many activity requests',
-      message: 'Activity tracking limit exceeded. Please try again later.',
-      retryAfter: 60,
-      timestamp: new Date().toISOString()
-    });
-  }
-});
+// Export empty auth limiter to avoid breaking imports
+export const authLimiter = (req, res, next) => next();
+
+// Rate limiting for file uploads - DISABLED
+// export const uploadLimiter = rateLimit({
+//   windowMs: 60 * 60 * 1000, // 1 hour
+//   max: 20, // Limit each IP to 20 uploads per hour
+//   message: {
+//     error: 'Too many file uploads, please try again later.',
+//     retryAfter: '1 hour'
+//   },
+//   standardHeaders: true,
+//   legacyHeaders: false,
+//   handler: (req, res, next) => {
+//     console.log(`Upload rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
+//     res.status(429).json({
+//       error: 'Too many file uploads',
+//       message: 'Upload limit exceeded. Please try again later.',
+//       retryAfter: Math.ceil(60 * 60),
+//       timestamp: new Date().toISOString()
+//     });
+//   }
+// });
+
+// Export empty upload limiter to avoid breaking imports
+export const uploadLimiter = (req, res, next) => next();
+
+// Rate limiting for activity tracking - DISABLED
+// export const activityLimiter = rateLimit({
+//   windowMs: 60 * 1000, // 1 minute
+//   max: 30, // Limit each IP to 30 activity requests per minute
+//   message: {
+//     error: 'Too many activity requests, please try again later.',
+//     retryAfter: '1 minute'
+//   },
+//   standardHeaders: true,
+//   legacyHeaders: false,
+//   handler: (req, res, next) => {
+//     console.log(`Activity rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
+//     res.status(429).json({
+//       error: 'Too many activity requests',
+//       message: 'Activity tracking limit exceeded. Please try again later.',
+//       retryAfter: 60,
+//       timestamp: new Date().toISOString()
+//     });
+//   }
+// });
+
+// Export empty activity limiter to avoid breaking imports
+export const activityLimiter = (req, res, next) => next();
 
 // ======================
 // SECURITY HEADERS MIDDLEWARE
