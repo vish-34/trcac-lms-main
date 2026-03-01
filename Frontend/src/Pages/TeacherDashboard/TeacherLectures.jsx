@@ -1,38 +1,65 @@
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function TeacherLectures() {
 
-  const lectures = [
+  const { user } = useAuth();
+  const [lectures, setLectures] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    {
-      id: 1,
-      topic: "IP Addressing",
-      subject: "Computer Networks",
-      date: "20 Feb",
-      duration: "1 Hr",
-      attendance: "87%"
-    },
+  // Fetch teacher's lectures
+  useEffect(() => {
+    const fetchTeacherLectures = async () => {
+      try {
+        console.log('📚 Fetching lectures for teacher:', user?.fullName);
+        
+        if (!user || !user.fullName) {
+          console.log('❌ No user or fullName found, skipping fetch');
+          setLectures([]);
+          return;
+        }
 
-    {
-      id: 2,
-      topic: "Normalization",
-      subject: "DBMS",
-      date: "21 Feb",
-      duration: "2 Hr",
-      attendance: "90%"
-    },
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/lecture/teacher/${user.fullName}`
+        );
 
-    {
-      id: 3,
-      topic: "Java OOP Concepts",
-      subject: "Java",
-      date: "22 Feb",
-      duration: "1.5 Hr",
-      attendance: "80%"
-    }
+        console.log('✅ Teacher lectures API response:', {
+          status: res.status,
+          dataLength: res.data?.length || 0,
+          dataType: typeof res.data
+        });
+        
+        // Log each lecture found
+        if (res.data && Array.isArray(res.data)) {
+          console.log('📋 Lectures found for', user.fullName, ':');
+          res.data.forEach((lecture, index) => {
+            console.log(`   ${index + 1}. ${lecture.title} (${lecture.subject}) - ID: ${lecture._id}`);
+          });
+        }
+        
+        setLectures(res.data || []);
+      } catch (err) {
+        console.error("❌ Error fetching teacher lectures:", err);
+        console.error("Error response:", err.response?.data);
+        console.error("Error status:", err.response?.status);
+        
+        // Set appropriate error message
+        if (err.response?.status === 404) {
+          console.log('ℹ️  No lectures found for teacher:', user?.fullName);
+        } else if (err.response?.status === 500) {
+          console.error('💥 Server error occurred');
+        }
+        
+        setLectures([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  ];
-
+    fetchTeacherLectures();
+  }, [user]);
 
   return (
 
@@ -44,7 +71,7 @@ export default function TeacherLectures() {
 
         <h1 className="text-xl sm:text-2xl font-semibold">
 
-          Lectures Review
+          My Lectures
 
         </h1>
 
@@ -57,7 +84,7 @@ export default function TeacherLectures() {
 
         <StatCard
           title="Total Lectures"
-          value="36"
+          value={lectures.length.toString()}
           color="bg-indigo-100"
         />
 
@@ -117,60 +144,52 @@ export default function TeacherLectures() {
 
             <tbody>
 
-              {lectures.map((l) => (
-
-                <tr
-                  key={l.id}
-                  className="border-t hover:bg-gray-50 transition"
-                >
-
-                  <td className="p-4 font-medium break-words">
-
-                    {l.topic}
-
+              {loading ? (
+                <tr>
+                  <td colSpan="6" className="p-8 text-center text-gray-500">
+                    Loading lectures...
                   </td>
-
-                  <td>
-
-                    {l.subject}
-
-                  </td>
-
-                  <td>
-
-                    {l.date}
-
-                  </td>
-
-                  <td>
-
-                    {l.duration}
-
-                  </td>
-
-                  <td>
-
-                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
-
-                      {l.attendance}
-
-                    </span>
-
-                  </td>
-
-                  <td className="pr-4">
-
-                    <button className="text-indigo-600 hover:text-indigo-800 font-medium">
-
-                      View Details
-
-                    </button>
-
-                  </td>
-
                 </tr>
-
-              ))}
+              ) : lectures.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="p-8 text-center text-gray-500">
+                    <div className="space-y-2">
+                      <p className="text-lg font-medium">No lectures assigned to you yet</p>
+                      <p className="text-sm">Contact your admin to get lectures assigned to your name</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                lectures.map((l) => (
+                  <tr
+                    key={l._id}
+                    className="border-t hover:bg-gray-50 transition"
+                  >
+                    <td className="p-4 font-medium break-words">
+                      {l.title}
+                    </td>
+                    <td>
+                      {l.subject}
+                    </td>
+                    <td>
+                      {new Date(l.createdAt).toLocaleDateString()}
+                    </td>
+                    <td>
+                      -
+                    </td>
+                    <td>
+                      <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
+                        N/A
+                      </span>
+                    </td>
+                    <td className="pr-4">
+                      <button className="text-indigo-600 hover:text-indigo-800 font-medium">
+                        View Details
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
 
             </tbody>
 
@@ -184,7 +203,7 @@ export default function TeacherLectures() {
 
   );
 
-}
+
 
 
 
@@ -210,4 +229,5 @@ function StatCard({ title, value, color }) {
 
   );
 
+}
 }

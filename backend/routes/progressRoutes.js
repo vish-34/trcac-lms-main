@@ -13,7 +13,7 @@ router.get("/", (req, res) => {
 // ======================
 router.post("/upsert", async (req, res) => {
   try {
-    const { studentId, lectureId, currentTime, duration } = req.body;
+    const { studentId, lectureId, currentTime, duration, completed } = req.body;
 
     if (!studentId || !lectureId) {
       return res.status(400).json({ message: "studentId and lectureId are required" });
@@ -22,8 +22,8 @@ router.post("/upsert", async (req, res) => {
     const safeCurrentTime = Number(currentTime || 0);
     const safeDuration = Number(duration || 0);
 
-    // Disable auto-completion - videos are never marked as complete
-    const completed = false;
+    // Only mark as completed if explicitly set by frontend (after anti-cheating validation)
+    const isCompleted = Boolean(completed && safeCurrentTime >= safeDuration * 0.95);
 
     const progress = await WatchProgress.findOneAndUpdate(
       { studentId, lectureId },
@@ -31,13 +31,17 @@ router.post("/upsert", async (req, res) => {
         $set: {
           currentTime: safeCurrentTime,
           duration: safeDuration,
-          completed,
+          completed: isCompleted,
         },
       },
       { new: true, upsert: true, setDefaultsOnInsert: true },
     );
 
-    res.json({ message: "Progress saved", progress });
+    res.json({ 
+      message: isCompleted ? "Progress completed!" : "Progress saved", 
+      progress,
+      completed: isCompleted
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
@@ -51,22 +55,56 @@ router.get("/continue/:studentId", async (req, res) => {
   try {
     const { studentId } = req.params;
 
+    console.log(`🔄 Fetching continue learning data for student: ${studentId}`);
+
     const progress = await WatchProgress.findOne({
       studentId,
-      currentTime: { $gt: 0 }, // Remove completed filter - always show latest watched
+      currentTime: { $gt: 0 }, // Only show lectures with actual progress
     })
       .sort({ updatedAt: -1 })
       .lean();
 
     if (!progress) {
-      return res.json({ progress: null });
+      console.log(`📝 No progress found for student: ${studentId}`);
+      return res.json({ progress: null, lecture: null });
     }
 
-    const lecture = await Lecture.findById(progress.lectureId).lean();
+    console.log(`📊 Found progress record:`, {
+      progressId: progress._id,
+      lectureId: progress.lectureId,
+      currentTime: progress.currentTime,
+      duration: progress.duration,
+      completed: progress.completed,
+      updatedAt: progress.updatedAt
+    });
 
-    res.json({ progress, lecture });
+    const lecture = await Lecture.findById(progress.lectureId)
+      .select('_id title subject facultyName youtubeLink college year course degree semester createdAt')
+      .lean();
+
+    if (!lecture) {
+      console.log(`⚠️  Lecture not found for progress.lectureId: ${progress.lectureId}`);
+      return res.json({ progress: null, lecture: null });
+    }
+
+    console.log(`📚 Found lecture for continue learning:`, {
+      lectureId: lecture._id,
+      title: lecture.title,
+      subject: lecture.subject,
+      facultyName: lecture.facultyName
+    });
+
+    res.json({ 
+      progress, 
+      lecture,
+      metadata: {
+        lectureId: lecture._id,
+        progressId: progress._id,
+        percentageWatched: Math.round((progress.currentTime / progress.duration) * 100)
+      }
+    });
   } catch (error) {
-    console.error(error);
+    console.error("❌ Error fetching continue learning data:", error);
     res.status(500).json({ message: "Server error" });
   }
 });

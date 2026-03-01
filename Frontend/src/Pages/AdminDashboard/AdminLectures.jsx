@@ -2,14 +2,17 @@ import { useState,useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import AdminAddLecture from "../../components/Admindashboard/AdminAddLecture.jsx";
 
 export default function Lectures(){
 
 const navigate = useNavigate();
 
+const [showAddLecture, setShowAddLecture] = useState(false);
+
 const addlectures=()=>{
 
-navigate("/admindashboard/addlectures");
+setShowAddLecture(true);
 
 };
 
@@ -416,6 +419,23 @@ time={new Date(l.createdAt).toLocaleString()}
         </button>
       </div>
     </motion.div>
+  </div>
+)}
+
+{/* ADD LECTURE MODAL */}
+{showAddLecture && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 h-full -translate-y-8">
+    <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div className="flex justify-between items-center mb-4">
+        <button
+          onClick={() => setShowAddLecture(false)}
+          className="text-gray-500 hover:text-gray-700 text-2xl"
+        >
+          ✕
+        </button>
+      </div>
+      <AdminAddLecture onClose={() => setShowAddLecture(false)} />
+    </div>
   </div>
 )}
 </div>

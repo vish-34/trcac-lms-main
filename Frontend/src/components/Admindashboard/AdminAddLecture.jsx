@@ -1,15 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
-import { useEffect } from "react";
+import { useAuth } from "../../context/AuthContext.jsx";
 
-export default function AdminAddLecture() {
+export default function AdminAddLecture({ onClose }) {
+
+    const { user } = useAuth();
+    console.log('Current user in AdminAddLecture:', user);
 
     const [form, setForm] = useState({
 
         title: "",
         subject: "",
-        facultyName: "",
+        facultyName: user?.role === 'teacher' ? user.fullName : "",
         youtubeLink: "",
         college: "",
         course: "",
@@ -21,6 +24,12 @@ export default function AdminAddLecture() {
     });
 
     const [subjects, setSubjects] = useState([]);
+
+    const [teachers, setTeachers] = useState([]);
+    const [filteredTeachers, setFilteredTeachers] = useState([]);
+    const [teacherSearch, setTeacherSearch] = useState("");
+    const [showTeacherDropdown, setShowTeacherDropdown] = useState(false);
+    const dropdownRef = useRef(null);
 
     const [loading, setLoading] = useState(false);
 
@@ -89,6 +98,71 @@ export default function AdminAddLecture() {
 
     }, [form.college, form.year, form.degree, form.stream, form.semester]);
 
+    // Fetch teachers when college, degree/stream, and year are selected
+    useEffect(() => {
+        const fetchTeachers = async () => {
+            try {
+                if (!form.college || !form.year) {
+                    setTeachers([]);
+                    setFilteredTeachers([]);
+                    return;
+                }
+
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/teachers`);
+                
+                console.log('Teachers API response:', res.data);
+                
+                if (res.data.teachers) {
+                    // Filter teachers based on college and degree/stream/year
+                    let filtered = res.data.teachers.filter(teacher => {
+                        if (teacher.college !== form.college) return false;
+                        
+                        if (form.college === "Degree College") {
+                            return teacher.course === form.degree;
+                        } else if (form.college === "Junior College") {
+                            return teacher.course === form.stream;
+                        }
+                        return true;
+                    });
+                    
+                    console.log('Filtered teachers:', filtered);
+                    
+                    setTeachers(filtered);
+                    setFilteredTeachers(filtered);
+                }
+            } catch (error) {
+                console.error("Error fetching teachers:", error);
+            }
+        };
+
+        fetchTeachers();
+    }, [form.college, form.year, form.degree, form.stream]);
+
+    // Filter teachers based on search
+    useEffect(() => {
+        if (teacherSearch.trim() === "") {
+            setFilteredTeachers(teachers);
+        } else {
+            const searchLower = teacherSearch.toLowerCase();
+            const filtered = teachers.filter(teacher => 
+                teacher.fullName.toLowerCase().includes(searchLower)
+            );
+            setFilteredTeachers(filtered);
+        }
+    }, [teacherSearch, teachers]);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setShowTeacherDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     // HANDLE CHANGE
 
@@ -119,6 +193,24 @@ export default function AdminAddLecture() {
 
     };
 
+    // Handle teacher selection
+    const handleTeacherSelect = (teacher) => {
+        setForm(prev => ({ ...prev, facultyName: teacher.fullName }));
+        setShowTeacherDropdown(false);
+        setTeacherSearch(teacher.fullName);
+    };
+
+    // Handle teacher search input
+    const handleTeacherSearch = (e) => {
+        const value = e.target.value;
+        setTeacherSearch(value);
+        setShowTeacherDropdown(true);
+    };
+
+    // Handle focus on teacher input
+    const handleTeacherFocus = () => {
+        setShowTeacherDropdown(true);
+    };
 
     // SUBMIT
 
@@ -136,7 +228,7 @@ export default function AdminAddLecture() {
             const submissionData = {
                 title: form.title,
                 subject: form.subject,
-                facultyName: form.facultyName,
+                facultyName: user?.role === 'teacher' ? user.fullName : form.facultyName,
                 youtubeLink: form.youtubeLink,
                 college: form.college,
                 course: form.course,
@@ -158,19 +250,27 @@ export default function AdminAddLecture() {
 
             console.log('Cleaned submission data:', submissionData);
 
-            await axios.post(
-
+            const response = await axios.post(
                 `${import.meta.env.VITE_API_URL}/api/lecture/add`,
-
                 submissionData
-
             );
 
-            setMessage("Lecture Added Successfully ✅");
+            console.log('✅ Lecture created successfully:', response.data);
+            
+            setMessage(`Lecture Added Successfully! 🎉 Lecture ID: ${response.data.lecture._id}`);
 
+            // Store the created lecture info for reference
+            if (response.data.lecture) {
+                console.log('New lecture details:', {
+                    id: response.data.lecture._id,
+                    title: response.data.lecture.title,
+                    subject: response.data.lecture.subject,
+                    createdAt: response.data.lecture.createdAt
+                });
+            }
 
+            // Reset form and close modal after successful submission
             setForm({
-
                 title: "",
                 subject: "",
                 facultyName: "",
@@ -180,8 +280,12 @@ export default function AdminAddLecture() {
                 degree: "",
                 year: "",
                 semester: ""
-
             });
+
+            // Close modal after a short delay to show success message
+            setTimeout(() => {
+                if (onClose) onClose();
+            }, 1500);
 
         }
         catch (error) {
@@ -637,37 +741,49 @@ export default function AdminAddLecture() {
 
                     </div>
 
-
-
                     {/* FACULTY */}
-
                     <div>
-
                         <label className="text-sm text-gray-600">
-
                             Faculty Name
-
                         </label>
-
-                        <input
-
-                            name="facultyName"
-                            required
-                            value={form.facultyName}
-                            onChange={handleChange}
-
-                            placeholder="Prof Sharma"
-
-                            className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
-
-                        />
-
+                        <div className="relative" ref={dropdownRef}>
+                            <input
+                                type="text"
+                                name="facultyName"
+                                required
+                                value={teacherSearch}
+                                onChange={handleTeacherSearch}
+                                onFocus={handleTeacherFocus}
+                                placeholder="Search and select faculty..."
+                                className="w-full border rounded-lg px-4 py-3 mt-1 focus:ring-2 focus:ring-indigo-400"
+                            />
+                            {showTeacherDropdown && (
+                                <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-lg">
+                                    {filteredTeachers.length > 0 ? (
+                                        filteredTeachers.map((teacher) => (
+                                            <div
+                                                key={teacher._id}
+                                                onClick={() => handleTeacherSelect(teacher)}
+                                                className="px-4 py-3 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                            >
+                                                <div className="font-medium">{teacher.fullName}</div>
+                                                <div className="text-sm text-gray-500">
+                                                    {teacher.college} - {teacher.course}
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="px-4 py-3 text-gray-500">
+                                            {teachers.length === 0 
+                                                ? "Select college, year, and degree/stream first"
+                                                : "No teachers found matching your search"
+                                            }
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
-
-
-
-                   
-
 
                     {/* YOUTUBE */}
 

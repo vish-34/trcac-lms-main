@@ -30,12 +30,13 @@ router.post("/add", async (req, res) => {
     const course =
       bodyCourse || (college === "Junior College" ? stream : degree);
 
-    console.log("Received lecture data:", {
+    console.log("Creating new lecture with data:", {
       title,
       subject,
       facultyName,
       youtubeLink,
       college,
+      course,
       year,
       stream,
       degree,
@@ -51,34 +52,55 @@ router.post("/add", async (req, res) => {
       !facultyName ||
       !youtubeLink ||
       !college ||
-      !year
+      !year ||
+      !course
     ) {
       return res.status(400).json({
-        message: "Missing required fields",
+        message: "All required fields must be provided",
+        missing: {
+          title: !title,
+          subject: !subject,
+          facultyName: !facultyName,
+          youtubeLink: !youtubeLink,
+          college: !college,
+          year: !year,
+          course: !course,
+        },
       });
     }
 
     // ======================
-    // COLLEGE-SPECIFIC VALIDATION
+    // YOUTUBE LINK VALIDATION
     // ======================
-    if (college === "Junior College") {
-      if (!stream) {
-        return res.status(400).json({
-          message: "Stream is required for Junior College",
-        });
-      }
-    }
-
-    if (college === "Degree College") {
-      if (!degree || !semester) {
-        return res.status(400).json({
-          message: "Degree and Semester are required for Degree College",
-        });
-      }
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
+    if (!youtubeRegex.test(youtubeLink)) {
+      return res.status(400).json({
+        message: "Invalid YouTube link format",
+      });
     }
 
     // ======================
-    // BUILD CLEAN LECTURE OBJECT
+    // CHECK FOR DUPLICATE LECTURES
+    // ======================
+    const existingLecture = await Lecture.findOne({
+      title,
+      subject,
+      facultyName,
+      college,
+      year,
+      course,
+      ...(semester && { semester }),
+    });
+
+    if (existingLecture) {
+      return res.status(409).json({
+        message: "A lecture with this title already exists for this subject and faculty",
+        existingLectureId: existingLecture._id,
+      });
+    }
+
+    // ======================
+    // CREATE LECTURE DOCUMENT
     // ======================
     const lectureData = {
       title,
@@ -86,39 +108,52 @@ router.post("/add", async (req, res) => {
       facultyName,
       youtubeLink,
       college,
-      course,
       year,
-
-      // Explicit defaults
-      stream: null,
-      degree: null,
-      semester: null,
+      course,
     };
 
+    // Add college-specific fields
     if (college === "Junior College") {
       lectureData.stream = stream;
-    }
-
-    if (college === "Degree College") {
+    } else if (college === "Degree College") {
       lectureData.degree = degree;
-      lectureData.semester = semester;
+      lectureData.semester = Number(semester);
     }
 
-    console.log("Clean lecture data:", lectureData);
+    const newLecture = new Lecture(lectureData);
+    const savedLecture = await newLecture.save();
 
-    // ======================
-    // SAVE
-    // ======================
-    const lecture = await Lecture.create(lectureData);
+    console.log("✅ Lecture created successfully:", {
+      lectureId: savedLecture._id,
+      title: savedLecture.title,
+      subject: savedLecture.subject,
+      facultyName: savedLecture.facultyName,
+      college: savedLecture.college,
+      createdAt: savedLecture.createdAt,
+    });
 
     res.status(201).json({
-      message: "Lecture added successfully",
-      lecture,
+      message: "Lecture created successfully",
+      lecture: {
+        _id: savedLecture._id,
+        title: savedLecture.title,
+        subject: savedLecture.subject,
+        facultyName: savedLecture.facultyName,
+        youtubeLink: savedLecture.youtubeLink,
+        college: savedLecture.college,
+        year: savedLecture.year,
+        course: savedLecture.course,
+        ...(savedLecture.stream && { stream: savedLecture.stream }),
+        ...(savedLecture.degree && { degree: savedLecture.degree }),
+        ...(savedLecture.semester && { semester: savedLecture.semester }),
+        createdAt: savedLecture.createdAt,
+      },
     });
   } catch (error) {
-    console.error(error);
+    console.error("❌ Error creating lecture:", error);
     res.status(500).json({
-      message: "Server error",
+      message: "Error creating lecture",
+      error: error.message,
     });
   }
 });
@@ -180,13 +215,17 @@ router.get("/student/:studentId", async (req, res) => {
     const { studentId } = req.params;
     const { semester } = req.query;
 
+    console.log(`📚 Fetching lectures for student: ${studentId}, semester: ${semester}`);
+
     let student = await DCStudent.findById(studentId);
 
     if (!student) {
+      console.log(`❌ Student not found: ${studentId}`);
       return res.status(404).json({ message: "Student not found" });
     }
 
     if (!semester) {
+      console.log(`❌ Semester not provided for student: ${studentId}`);
       return res.status(400).json({ message: "Semester required" });
     }
 
@@ -197,13 +236,49 @@ router.get("/student/:studentId", async (req, res) => {
       semester: Number(semester)
     };
 
-    const lectures = await Lecture.find(filter).sort({ createdAt: -1 });
+    console.log(`🔍 Using filter:`, filter);
+
+    const lectures = await Lecture.find(filter)
+      .select('_id title subject facultyName youtubeLink college year course degree semester createdAt')
+      .sort({ createdAt: -1 });
+
+    console.log(`✅ Found ${lectures.length} lectures for student ${studentId}`);
+    
+    // Log each lecture with its unique ID
+    lectures.forEach((lecture, index) => {
+      console.log(`   ${index + 1}. Lecture ID: ${lecture._id}, Title: ${lecture.title}, Subject: ${lecture.subject}`);
+    });
 
     res.json(lectures);
 
   } catch (error) {
-    console.log(error);
+    console.error("❌ Error fetching student lectures:", error);
     res.status(500).json({ message: "Error fetching lectures" });
+  }
+
+});
+
+// ======================
+// GET LECTURES (TEACHER)
+// ======================
+
+router.get("/teacher/:teacherId", async (req, res) => {
+
+  try {
+
+    const { teacherId } = req.params;
+    console.log('Fetching lectures for teacher ID:', teacherId);
+
+    // Find lectures created by this teacher
+    const lectures = await Lecture.find({ facultyName: teacherId }).sort({ createdAt: -1 });
+    console.log('Found lectures:', lectures.length);
+    console.log('Lectures data:', lectures);
+
+    res.json(lectures);
+
+  } catch (error) {
+    console.log("Error in teacher lectures route:", error);
+    res.status(500).json({ message: "Error fetching teacher lectures" });
   }
 
 });
