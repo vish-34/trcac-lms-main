@@ -19,6 +19,7 @@ import TeacherHome from './Pages/TeacherDashboard/TeacherHome.jsx';
 import TeacherLectures from './Pages/TeacherDashboard/TeacherLectures.jsx';
 import TeacherAssignment from './Pages/TeacherDashboard/Assignments.jsx';
 import TeacherExams from './Pages/TeacherDashboard/TeacherExams.jsx';
+import AllActivity from './Pages/TeacherDashboard/AllActivity.jsx';
 import AdminHome from './Pages/AdminDashboard/AdminHome.jsx';
 import AdminLectures from './Pages/AdminDashboard/AdminLectures.jsx';
 import AdminCredentials from './Pages/AdminDashboard/AdminCredentials.jsx';
@@ -149,6 +150,7 @@ const AppRoutes = () => {
         <Route path="lectures" element={<TeacherLectures />} />
         <Route path="assignment" element={<TeacherAssignment />} />
         <Route path="exams" element={<TeacherExams />} />
+        <Route path="activity" element={<AllActivity />} />
       </Route>
       
       {/* Admin Dashboard */}

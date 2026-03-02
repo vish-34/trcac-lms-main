@@ -35,6 +35,12 @@ const userSchema = new mongoose.Schema({
       return this.role === 'student';
     }
   },
+  semester: {
+    type: Number,
+    required: function() {
+      return this.role === 'student';
+    }
+  },
   createdAt: {
     type: Date,
     default: Date.now

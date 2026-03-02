@@ -24,6 +24,12 @@ const JCStudentSchema = new mongoose.Schema({
     required: true,
     enum: ['FY', 'SY']
   },
+
+  semester: {
+    type: Number,
+    required: true,
+    enum: [1, 2]
+  },
   class: {
     type: String,
     required: true,

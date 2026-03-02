@@ -177,6 +177,7 @@ router.get("/pending-reviews/:teacherId", async (req, res) => {
     const assignments = await Assignment.find({
       teacherId,
       isActive: true,
+      status: { $ne: "graded" }, // Exclude graded assignments
       "submissions.status": "submitted"
     })
     .sort({ deadline: -1 })
@@ -212,6 +213,62 @@ router.get("/pending-reviews/:teacherId", async (req, res) => {
   } catch (error) {
     console.error("Error fetching pending reviews:", error);
     res.status(500).json({ message: "Failed to fetch pending reviews" });
+  }
+});
+
+// ======================
+// MARK SUBMISSION AS REVIEWED
+// ======================
+router.patch("/submission/:assignmentId/:studentId", async (req, res) => {
+  try {
+    const { assignmentId, studentId } = req.params;
+    const { grade, feedback } = req.body;
+    
+    console.log('Mark submission as reviewed:', { assignmentId, studentId, grade, feedback });
+    
+    const Assignment = (await import("../models/Assignment.js")).default;
+    
+    const assignment = await Assignment.findById(assignmentId);
+    
+    if (!assignment) {
+      console.log('Assignment not found:', assignmentId);
+      return res.status(404).json({ message: "Assignment not found" });
+    }
+    
+    // Find and update the specific submission
+    const submission = assignment.submissions.find(
+      sub => sub.studentId.toString() === studentId.toString()
+    );
+    
+    if (!submission) {
+      console.log('Submission not found:', studentId);
+      console.log('Available submissions:', assignment.submissions.map(s => ({ studentId: s.studentId, studentName: s.studentName })));
+      return res.status(404).json({ message: "Submission not found" });
+    }
+    
+    // Update submission status
+    submission.status = "graded";
+    if (grade) submission.grade = grade;
+    if (feedback) submission.feedback = feedback;
+    submission.reviewedAt = new Date();
+    
+    console.log('Updated submission:', submission);
+    
+    await assignment.save();
+    
+    console.log('Assignment saved successfully');
+    
+    res.json({
+      message: "Submission marked as reviewed successfully",
+      submission
+    });
+    
+  } catch (error) {
+    console.error("Error marking submission as reviewed:", error);
+    res.status(500).json({ 
+      message: "Failed to mark submission as reviewed", 
+      error: error.message 
+    });
   }
 });
 

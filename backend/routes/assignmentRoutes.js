@@ -288,7 +288,8 @@ router.get("/teacher/:teacherId", async (req, res) => {
     
     const assignments = await Assignment.find({ 
       teacherId,
-      isActive: true 
+      isActive: true,
+      status: { $ne: "graded" } // Exclude graded assignments from main list
     })
     .sort({ createdAt: -1 })
     .lean();
@@ -584,6 +585,45 @@ router.put("/:assignmentId", upload.single("assignmentFile"), async (req, res) =
   } catch (error) {
     console.error("Error updating assignment:", error);
     res.status(500).json({ message: "Failed to update assignment" });
+  }
+});
+
+// ======================
+// MARK ASSIGNMENT AS DONE/GRADED
+// ======================
+router.patch("/:assignmentId/grade", async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
+    const { grade, feedback } = req.body;
+    
+    if (!assignmentId) {
+      return res.status(400).json({ message: "Assignment ID is required" });
+    }
+    
+    const assignment = await Assignment.findById(assignmentId);
+    
+    if (!assignment) {
+      return res.status(404).json({ message: "Assignment not found" });
+    }
+    
+    // Update assignment status to graded (or done)
+    assignment.status = 'graded';
+    if (grade) assignment.grade = grade;
+    if (feedback) assignment.feedback = feedback;
+    
+    await assignment.save();
+    
+    res.json({
+      message: "Assignment marked as graded successfully",
+      assignment
+    });
+    
+  } catch (error) {
+    console.error("Error grading assignment:", error);
+    res.status(500).json({ 
+      message: "Failed to grade assignment", 
+      error: error.message 
+    });
   }
 });
 

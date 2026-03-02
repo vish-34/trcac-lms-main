@@ -80,7 +80,7 @@ app.use(
         callback(new Error('Not allowed by CORS'));
       }
     },
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
     maxAge: 86400, // 24 hours
     preflightContinue: false,

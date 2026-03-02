@@ -343,84 +343,21 @@ export default function Lectures() {
 
   const saveProgress = async ({ lectureId, currentTime, duration }) => {
     try {
-      // Get current tracking data
-      const lastPosition = lastTrackedPositions[lectureId] || 0;
-      const lastValidPosition = lastValidPositions[lectureId] || 0;
-      const videoStartTime = videoStartTimes[lectureId] || 0;
-      const totalWatched = totalWatchTime[lectureId] || 0;
+      console.log(`💾 Saving progress for lecture ${lectureId}: ${currentTime}s/${duration}s`);
       
-      // More lenient validation for normal playback
-      const timeDiff = Math.abs(currentTime - lastPosition);
-      const maxAllowedJump = 5; // Increased to 5 seconds for normal playback
-      
-      // Total watch time validation (must have watched at least 80% of video time)
-      const requiredWatchTime = duration * 0.8;
-      const hasSufficientWatchTime = totalWatched >= requiredWatchTime;
-      
-      // Sequential progress validation (more lenient)
-      const isSequentialProgress = currentTime >= lastValidPosition - 10; // Allow 10 seconds backward
-      
-      // Completion validation (only mark complete if actually watched)
-      const isNearEnd = currentTime >= duration * 0.95;
-      const canComplete = isNearEnd && hasSufficientWatchTime;
-      
-      // First time initialization
-      if (lastPosition === 0) {
-        setLastValidPositions(prev => ({ ...prev, [lectureId]: currentTime }));
-        setVideoStartTimes(prev => ({ ...prev, [lectureId]: Date.now() }));
-        setTotalWatchTime(prev => ({ ...prev, [lectureId]: 0 }));
-      }
-      // Only block significant cheating attempts
-      else if (timeDiff > maxAllowedJump && lastPosition > 0) {
-        // Check if this is a significant forward jump (cheating)
-        const isSignificantForwardJump = currentTime > lastValidPosition + 10;
-        
-        if (isSignificantForwardJump) {
-          console.log(`🚫 CHEATING DETECTED: ${timeDiff}s jump from ${lastPosition}s to ${currentTime}s - Forcing back to ${lastValidPosition}s`);
-          
-          // Force back to last valid position
-          const player = playerRefs[lectureId];
-          if (player && player.seekTo) {
-            player.seekTo(lastValidPosition, true);
-            setIsSeeking(prev => ({ ...prev, [lectureId]: true }));
-            setIsVideoLocked(prev => ({ ...prev, [lectureId]: true }));
-            
-            setTimeout(() => {
-              setIsSeeking(prev => ({ ...prev, [lectureId]: false }));
-              setIsVideoLocked(prev => ({ ...prev, [lectureId]: false }));
-            }, 1000);
-          }
-          return; // Don't save cheated progress
-        }
-      }
-      
-      // Only save progress if validation passes
       const progressData = {
         studentId: user.id,
         lectureId,
-        currentTime: Math.min(currentTime, duration), // Cap at duration
+        currentTime: Math.min(currentTime, duration),
         duration,
-        completed: canComplete // Only mark complete if all conditions met
+        completed: currentTime >= duration * 0.95
       };
       
-      console.log(`📤 Sending progress data to backend:`, progressData);
-      
       await axios.post(`${import.meta.env.VITE_API_URL}/api/progress/upsert`, progressData);
-      
-      console.log(`✅ Backend response received for lecture ${lectureId}`);
-      
-      // Update tracking data
-      setLastTrackedPositions(prev => ({ ...prev, [lectureId]: currentTime }));
-      setLastValidPositions(prev => ({ ...prev, [lectureId]: currentTime }));
-      
-      // Update total watch time (increment by actual time watched)
-      const timeIncrement = Math.min(timeDiff, 2); // Max 2 seconds per update
-      setTotalWatchTime(prev => ({ ...prev, [lectureId]: totalWatched + timeIncrement }));
-      
-      console.log(`✅ Progress saved successfully: ${currentTime}s (${Math.round((currentTime/duration)*100)}%) - Total watched: ${Math.round(totalWatched + timeIncrement)}s`);
+      console.log(`✅ Progress saved successfully`);
       
     } catch (error) {
-      console.error('Error saving progress:', error);
+      console.error('❌ Error saving progress:', error);
     }
   };
 
@@ -599,32 +536,11 @@ export default function Lectures() {
       });
 
       setResumeAtSeconds(resumeTime);
-      
-      // Initialize tracking positions immediately
-      setLastValidPositions(prev => ({
-        ...prev,
-        [id]: resumeTime
-      }));
-      
-      setLastTrackedPositions(prev => ({
-        ...prev,
-        [id]: resumeTime
-      }));
-
       console.log(`📍 Set resume position for lecture ${id}: ${resumeTime}s`);
 
     } catch (error) {
       console.error(`❌ Error fetching progress for lecture ${id}:`, error);
-      // Set default values if no progress found
       setResumeAtSeconds(0);
-      setLastValidPositions(prev => ({
-        ...prev,
-        [id]: 0
-      }));
-      setLastTrackedPositions(prev => ({
-        ...prev,
-        [id]: 0
-      }));
     }
   };
 
@@ -827,110 +743,77 @@ export default function Lectures() {
                   className="absolute top-0 left-0 w-full h-full"
                   iframeClassName="w-full h-full"
                   onReady={(e) => {
-                    // Store player reference for progress tracking
+                    console.log(`🎯 Video ready - Lecture ${lecture._id}`);
+                    
+                    // Store player reference
                     setPlayerRefs(prev => ({
                       ...prev,
                       [lecture._id]: e.target
                     }));
 
-                    // Resume from saved position if this is the active lecture
+                    // SIMPLE RESUME SYSTEM
                     if (activeLectureId === lecture._id && resumeAtSeconds > 0) {
                       console.log(`🔄 Resuming lecture ${lecture._id} from ${resumeAtSeconds} seconds`);
                       
-                      // Seek to resume position after a short delay to ensure player is ready
+                      // Simple direct resume
                       setTimeout(() => {
-                        e.target.seekTo(resumeAtSeconds);
-                        console.log(`✅ Resumed lecture ${lecture._id} at ${resumeAtSeconds}s`);
-                      }, 500);
+                        e.target.seekTo(resumeAtSeconds, true);
+                        console.log(`✅ Resumed at ${resumeAtSeconds}s`);
+                      }, 1000);
                     }
 
-                    // Add seeking prevention - monitor time updates continuously
-                    const checkForSeeking = setInterval(async () => {
+                    // SIMPLE ANTI-SEEKING SYSTEM
+                    let lastKnownTime = resumeAtSeconds || 0;
+                    let isResuming = true;
+                    
+                    // Resume protection for first 3 seconds
+                    setTimeout(() => {
+                      isResuming = false;
+                      console.log(`🔓 Resume protection ended`);
+                    }, 3000);
+
+                    const preventSeeking = setInterval(async () => {
                       try {
-                        const player = playerRefs[lecture._id];
-                        if (!player) return;
+                        if (isVideoLocked[lecture._id]) return;
                         
-                        const currentTime = await player.getCurrentTime();
-                        const duration = await player.getDuration();
-                        const playerState = await player.getPlayerState();
+                        const currentTime = await e.target.getCurrentTime();
+                        const playerState = await e.target.getPlayerState();
                         
-                        // Skip checks if video is locked
-                        if (isVideoLocked[lecture._id]) {
+                        // Don't check during resume protection
+                        if (isResuming) {
+                          lastKnownTime = currentTime;
                           return;
                         }
                         
-                        const lastValid = lastValidPositions[lecture._id] || 0;
-                        const lastTracked = lastTrackedPositions[lecture._id] || 0;
+                        // Simple time jump detection
+                        const timeDiff = Math.abs(currentTime - lastKnownTime);
                         
-                        // Enhanced anti-cheating: Always check for seeking regardless of player state
-                        // But allow normal pause/resume behavior
-                        
-                        // Calculate time difference since last check
-                        const timeDiff = Math.abs(currentTime - lastTracked);
-                        
-                        // Very strict jump detection (2 seconds max for any jump)
-                        const maxAllowedJump = 2;
-                        
-                        // Detect ANY significant time jump (cheating)
-                        const isSignificantJump = timeDiff > maxAllowedJump && lastTracked > 0;
-                        
-                        // Detect backward jumps (prevent rewinding more than 3 seconds)
-                        const isBackwardJump = currentTime < lastValid - 3;
-                        
-                        // Detect forward jumps (prevent skipping ahead more than 2 seconds)
-                        const isForwardJump = currentTime > lastValid + maxAllowedJump;
-                        
-                        // Enhanced cheating detection - trigger on ANY violation
-                        if (isSignificantJump || isBackwardJump || isForwardJump) {
-                          console.log(`🚫 ROBUST CHEATING DETECTED:`);
-                          console.log(`   - Current time: ${currentTime}s`);
-                          console.log(`   - Last valid: ${lastValid}s`);
-                          console.log(`   - Last tracked: ${lastTracked}s`);
-                          console.log(`   - Time diff: ${timeDiff}s`);
-                          console.log(`   - Backward jump: ${isBackwardJump}`);
-                          console.log(`   - Forward jump: ${isForwardJump}`);
-                          console.log(`   - Player state: ${playerState}`);
-                          console.log(`   - Significant jump: ${isSignificantJump}`);
+                        if (timeDiff > 3 && lastKnownTime > 0) {
+                          console.log(`🚫 Seeking detected! Jump from ${lastKnownTime}s to ${currentTime}s`);
                           
-                          // Force back to last valid position immediately
-                          player.seekTo(lastValid, true);
-                          setIsSeeking(prev => ({ ...prev, [lecture._id]: true }));
+                          // Force back to last known position
+                          e.target.seekTo(lastKnownTime, true);
                           setIsVideoLocked(prev => ({ ...prev, [lecture._id]: true }));
                           
-                          // Lock video longer for repeated cheating attempts
-                          const lockDuration = Math.min(3000, timeDiff * 200); // Up to 3 seconds
                           setTimeout(() => {
-                            setIsSeeking(prev => ({ ...prev, [lecture._id]: false }));
                             setIsVideoLocked(prev => ({ ...prev, [lecture._id]: false }));
-                          }, lockDuration);
+                          }, 2000);
                           
                           return;
                         }
                         
-                        // Update valid position if progress is legitimate and forward
-                        if (currentTime >= lastValid && currentTime <= lastValid + maxAllowedJump) {
-                          setLastValidPositions(prev => ({
-                            ...prev,
-                            [lecture._id]: currentTime
-                          }));
-                        }
-                        
-                        // Always update tracked position for legitimate progress
-                        if (!isSignificantJump && !isBackwardJump && !isForwardJump) {
-                          setLastTrackedPositions(prev => ({
-                            ...prev,
-                            [lecture._id]: currentTime
-                          }));
+                        // Update last known time for legitimate progress
+                        if (currentTime >= lastKnownTime) {
+                          lastKnownTime = currentTime;
                         }
                         
                       } catch (error) {
-                        // Silent error handling for continuous monitoring
-                        console.error('Enhanced seeking detection error:', error);
+                        console.error('Anti-seeking error:', error);
                       }
-                    }, 200); // Check every 200ms for faster detection
+                    }, 500);
 
-                    // Store interval ID for cleanup
-                    e.target.seekingCheckInterval = checkForSeeking;
+                    // Store interval for cleanup
+                    e.target.seekingPrevention = preventSeeking;
                   }}
                   onStateChange={async (e) => {
                     console.log(`🎬 Video state changed for lecture ${lecture._id}:`, e.data);

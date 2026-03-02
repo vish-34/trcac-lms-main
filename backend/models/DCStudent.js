@@ -29,7 +29,11 @@ const DCStudentSchema = new mongoose.Schema({
     enum: ['FY', 'SY', 'TY']
   },
 
-  // ❌ Semester removed completely
+  semester: {
+    type: Number,
+    required: true,
+    enum: [1, 2, 3, 4, 5, 6]
+  },
 
   class: {
     type: String,

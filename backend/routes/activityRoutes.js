@@ -433,4 +433,92 @@ router.get("/debug/:studentId", async (req, res) => {
   }
 });
 
+// ======================
+// GET ALL ACTIVITIES FOR TEACHER (PAGINATED)
+// ======================
+router.get("/all/:teacherId", async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    const { 
+      page = 1, 
+      limit = 50, 
+      activityType, 
+      college, 
+      class: studentClass, 
+      timeframe 
+    } = req.query;
+
+    // Calculate skip for pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Build base query
+    let query = {};
+    
+    // Add filters
+    if (activityType && activityType !== 'all') {
+      query.activityType = activityType;
+    }
+    
+    if (college && college !== 'all') {
+      query.college = college;
+    }
+    
+    if (studentClass && studentClass !== 'all') {
+      query.class = studentClass;
+    }
+
+    // Add timeframe filter
+    if (timeframe && timeframe !== 'all') {
+      const now = new Date();
+      let timeRange;
+      
+      switch (timeframe) {
+        case '1h':
+          timeRange = new Date(now.getTime() - 60 * 60 * 1000);
+          break;
+        case '24h':
+          timeRange = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case '7d':
+          timeRange = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case '30d':
+          timeRange = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+      }
+      
+      if (timeRange) {
+        query.timestamp = { $gte: timeRange };
+      }
+    }
+
+    // Get total count for pagination
+    const total = await StudentActivity.countDocuments(query);
+
+    // Get activities with pagination
+    const activities = await StudentActivity.find(query)
+      .sort({ timestamp: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .populate('studentId', 'fullName email')
+      .lean();
+
+    // Calculate total pages
+    const totalPages = Math.ceil(total / parseInt(limit));
+
+    res.json({
+      activities,
+      total,
+      totalPages,
+      currentPage: parseInt(page),
+      hasNextPage: parseInt(page) < totalPages,
+      hasPreviousPage: parseInt(page) > 1
+    });
+
+  } catch (error) {
+    console.error("Error fetching all activities:", error);
+    res.status(500).json({ message: "Failed to fetch all activities" });
+  }
+});
+
 export default router;

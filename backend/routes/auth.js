@@ -233,6 +233,7 @@ router.post("/login", async (req, res) => {
         role: user.role,
         college: user.college,
         degree: user.degree,
+        semester: user.semester,
         stream: user.stream,
         year: user.year,
         userType
@@ -282,7 +283,12 @@ router.get("/verify", async (req, res) => {
         id: user._id,
         fullName: user.fullName,
         email: user.email,
-        role: user.role
+        role: user.role,
+        college: user.college,
+        degree: user.degree,
+        semester: user.semester,
+        stream: user.stream,
+        year: user.year
       }
     });
 

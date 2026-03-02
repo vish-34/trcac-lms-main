@@ -326,6 +326,26 @@ export default function Assignments() {
     }
   };
 
+  const handleMarkAsDone = async (assignmentId) => {
+    try {
+      const { grade, feedback } = prompt('Enter grade (optional):', 'Enter feedback (optional):');
+      
+      const response = await axios.patch(
+        `${import.meta.env.VITE_API_URL}/api/assignments/${assignmentId}/grade`,
+        { grade: grade || null, feedback: feedback || null }
+      );
+      
+      console.log('Assignment marked as done:', response.data);
+      
+      // Refresh assignments to update the list
+      await fetchAssignments();
+      
+    } catch (error) {
+      console.error('Error marking assignment as done:', error);
+      setError('Failed to mark assignment as done');
+    }
+  };
+
   const handleViewSubmission = (submission) => {
     setSelectedSubmission(submission);
     setShowPdfViewer(true);
@@ -647,6 +667,13 @@ export default function Assignments() {
                     className="text-green-600 font-medium text-sm"
                   >
                     View Submissions ({assignment.stats?.submittedCount || 0})
+                  </button>
+                  <button
+                    onClick={() => handleMarkAsDone(assignment._id)}
+                    className="text-purple-600 font-medium text-sm"
+                    disabled={assignment.status === 'graded'}
+                  >
+                    {assignment.status === 'graded' ? 'Graded' : 'Mark as Done'}
                   </button>
                   <button
                     onClick={() => handleEdit(assignment)}

@@ -31,6 +31,10 @@ export default function Sidebar() {
         ? extractNameFromEmail(user.email)
         : "Student";
 
+  const displaySemester = user?.semester || "Student";
+
+  const displayDegree = user?.degree || "Student";
+
 
   const menuItems = [
 
@@ -170,7 +174,7 @@ export default function Sidebar() {
 
                 <p className="text-xs font-medium text-indigo-600">
 
-                  Student
+                  SEM {displaySemester} - {displayDegree}
 
                 </p>
 

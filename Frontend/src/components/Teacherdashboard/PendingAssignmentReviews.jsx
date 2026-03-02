@@ -19,8 +19,11 @@ const PendingAssignmentReviews = () => {
   // REMOVE AFTER VIEW
   // =====================
 
-  const handleViewSubmission = (assignmentId, submissionId) => {
+  const handleViewSubmission = async (assignmentId, submissionId) => {
 
+    console.log('handleViewSubmission called with:', { assignmentId, submissionId });
+    
+    // Always update local state first for immediate UI feedback
     if (!pendingReviews || !Array.isArray(pendingReviews)) {
       console.log("pendingReviews not available:", pendingReviews);
       return;
@@ -30,6 +33,8 @@ const PendingAssignmentReviews = () => {
       pendingReviews.findIndex(
         (a) => a.assignmentId === assignmentId
       );
+
+    console.log('Found assignment index:', assignmentIndex);
 
     if (assignmentIndex !== -1) {
 
@@ -41,6 +46,8 @@ const PendingAssignmentReviews = () => {
         updatedAssignment.pendingSubmissions.findIndex(
           (s) => s.studentId === submissionId
         );
+
+      console.log('Found submission index:', submissionIndex);
 
       if (submissionIndex !== -1) {
 
@@ -54,14 +61,39 @@ const PendingAssignmentReviews = () => {
         if (
           updatedAssignment.pendingSubmissions.length === 0
         ) {
+          console.log('Removing entire assignment from list');
           updatedReviews.splice(assignmentIndex, 1);
         } else {
+          console.log('Updating assignment in list');
           updatedReviews[assignmentIndex] =
             updatedAssignment;
         }
 
+        console.log('Setting new pending reviews:', updatedReviews);
         setPendingReviews(updatedReviews);
       }
+    }
+    
+    // Then try to mark as reviewed in backend
+    try {
+      console.log('Making API call to:', `${import.meta.env.VITE_API_URL}/api/exams/submission/${assignmentId}/${submissionId}`);
+      
+      const response = await axios.patch(
+        `${import.meta.env.VITE_API_URL}/api/exams/submission/${assignmentId}/${submissionId}`,
+        { grade: null, feedback: null } // Optional grade and feedback
+      );
+      
+      console.log('API Response:', response);
+      console.log('Submission marked as reviewed:', response.data);
+      
+    } catch (error) {
+      console.error('Error marking submission as reviewed:', error);
+      console.error('Error response:', error.response);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      
+      // Show error to user so they know it failed
+      setError(`Failed to mark submission as reviewed: ${error.response?.data?.message || error.message}`);
     }
   };
 
@@ -237,6 +269,23 @@ const PendingAssignmentReviews = () => {
         </span>
 
       </div>
+
+      {/* ERROR DISPLAY */}
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+
+          <p className="text-sm text-red-700">{error}</p>
+
+          <button
+            onClick={() => setError("")}
+            className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
+          >
+            Dismiss
+          </button>
+
+        </div>
+      )}
 
 
       {/* EMPTY */}

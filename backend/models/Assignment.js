@@ -96,6 +96,11 @@ const assignmentSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  status: {
+    type: String,
+    enum: ["active", "graded", "returned"],
+    default: "active"
+  },
   submissions: [{
     studentId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -123,7 +128,11 @@ const assignmentSchema = new mongoose.Schema({
       default: "submitted"
     },
     grade: String,
-    feedback: String
+    feedback: String,
+    reviewedAt: {
+      type: Date,
+      default: null
+    }
   }]
 }, {
   timestamps: true
