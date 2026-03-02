@@ -27,6 +27,7 @@ import UserManagement from './Pages/AdminDashboard/UserManagement.jsx';
 import AdminAddLecture from './components/Admindashboard/AdminAddLecture.jsx';
 import AdminSubjects from './Pages/AdminDashboard/AdminSubjects.jsx';
 import AdminAddSubjects from './Pages/AdminDashboard/AdminAddSubjects.jsx';
+// import Exams from './components/Studentdashboard/Exams.jsx';
 
 // Navigation Guard Component
 const NavigationGuard = ({ children }) => {
@@ -135,6 +136,7 @@ const AppRoutes = () => {
         <Route path="assignment" element={<StudentAssignment />} />
         <Route path="assignment/submit/:assignmentId" element={<StudentSubmitAssignment />} />
         <Route path="subjects" element={<StudentSubjects />} />
+        {/* <Route path="exams" element={<Exams />} /> */}
       </Route>
       
       {/* Teacher Dashboard */}

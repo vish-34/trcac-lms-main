@@ -60,7 +60,13 @@ export default function Sidebar() {
       name:"Assignment",
       path:"/studentdashboard/assignment",
       icon:<FileText size={20}/>
-    }
+    },
+
+    // {
+    //   name:"exams",
+    //   path:"/studentdashboard/exams",
+    //   icon:<FileText size={20}/>
+    // }
 
   ];
 

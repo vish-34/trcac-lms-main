@@ -138,6 +138,7 @@ router.get("/teacher/:teacherId", async (req, res) => {
   }
 });
 
+
 // ======================
 // GET UPCOMING EXAMS FOR TEACHER
 // ======================
