@@ -101,7 +101,7 @@ const AdminAddSubjects = () => {
 
       if (response.data.success) {
 
-        setSuccess("Subject added successfully ✅");
+        setSuccess("Subject added successfully");
 
         setFormData({
 

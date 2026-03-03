@@ -42,6 +42,12 @@ export default function Adminsidebar() {
     },
 
     {
+      name:"Bulk Enrollment",
+      path:"/admindashboard/bulk-enrollment",
+      icon:<UserPlus size={20}/>
+    },
+
+    {
       name:"Credentials",
       path:"/admindashboard/credentials",
       icon:<Video size={20}/>
@@ -60,7 +66,6 @@ export default function Adminsidebar() {
     }
 
   ];
-
 
 
   return(

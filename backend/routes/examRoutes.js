@@ -113,6 +113,44 @@ router.post("/create", upload.single("examFile"), async (req, res) => {
   }
 });
 
+
+// ======================
+// GET EXAMS FOR STUDENT
+// ======================
+router.get("/student/:studentId", async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    
+    // Get student information to filter by their class and college
+    const DCStudent = (await import("../models/DCStudent.js")).default;
+    const JCStudent = (await import("../models/JCStudent.js")).default;
+    
+    let student = await DCStudent.findById(studentId);
+    if (!student) {
+      student = await JCStudent.findById(studentId);
+    }
+    
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+    
+    // Find exams for this student's class and college
+    const exams = await Exam.find({
+      college: student.college,
+      class: student.class,
+      isActive: true
+    }).sort({ examDate: 1 }).lean();
+    
+    res.json({
+      exams,
+      total: exams.length
+    });
+    
+  } catch (error) {
+    console.error("Error fetching student exams:", error);
+    res.status(500).json({ message: "Failed to fetch exams" });
+  }
+});
 // ======================
 // GET EXAMS FOR TEACHER
 // ======================

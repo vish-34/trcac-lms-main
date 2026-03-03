@@ -13,22 +13,22 @@ export const useAuth = () => {
 // Get token from localStorage with validation
 const getStoredToken = () => {
   try {
-    console.log('🔍 Checking localStorage...');
+    console.log('Checking localStorage...');
     const allKeys = Object.keys(localStorage);
-    console.log('📋 localStorage keys:', allKeys);
+    console.log('localStorage keys:', allKeys);
     
     const storedToken = localStorage.getItem('token');
-    console.log('📝 Raw token from localStorage:', storedToken);
+    console.log('Raw token from localStorage:', storedToken);
     
     if (storedToken && storedToken.trim() !== '') {
-      console.log('✅ Token found and not empty');
+      console.log('Token found and not empty');
       return storedToken;
     } else {
-      console.log('❌ Token is empty or null');
+      console.log('Token is empty or null');
       return null;
     }
   } catch (error) {
-    console.error('💥 Error reading token from localStorage:', error);
+    console.error('Error reading token from localStorage:', error);
     return null;
   }
 };
@@ -43,14 +43,14 @@ export const AuthProvider = ({ children }) => {
   const storeToken = (tokenToStore) => {
     try {
       if (tokenToStore && tokenToStore.trim() !== '') {
-        console.log('💾 Storing token in localStorage:', tokenToStore.substring(0, 20) + '...');
+        console.log('Storing token in localStorage:', tokenToStore.substring(0, 20) + '...');
         localStorage.setItem('token', tokenToStore);
-        console.log('✅ Token stored successfully');
-        console.log('🔍 Verification - localStorage.getItem("token"):', localStorage.getItem('token')?.substring(0, 20) + '...');
+        console.log('Token stored successfully');
+        console.log('Verification - localStorage.getItem("token"):', localStorage.getItem('token')?.substring(0, 20) + '...');
         return true;
       }
     } catch (error) {
-      console.error('💥 Error storing token in localStorage:', error);
+      console.error('Error storing token in localStorage:', error);
     }
     return false;
   };
@@ -59,13 +59,13 @@ export const AuthProvider = ({ children }) => {
   const storeUser = (userToStore) => {
     try {
       if (userToStore) {
-        console.log('💾 Storing user in localStorage:', userToStore.email);
+        console.log('Storing user in localStorage:', userToStore.email);
         localStorage.setItem('user', JSON.stringify(userToStore));
-        console.log('✅ User stored successfully');
+        console.log('User stored successfully');
         return true;
       }
     } catch (error) {
-      console.error('💥 Error storing user in localStorage:', error);
+      console.error('Error storing user in localStorage:', error);
     }
     return false;
   };
@@ -73,14 +73,14 @@ export const AuthProvider = ({ children }) => {
   // Remove token from localStorage
   const removeStoredToken = () => {
     try {
-      console.log('🗑️ Removing token from localStorage...');
-      console.log('🔍 Before removal - localStorage.getItem("token"):', localStorage.getItem('token')?.substring(0, 20) + '...');
+      console.log('Removing token from localStorage...');
+      console.log('Before removal - localStorage.getItem("token"):', localStorage.getItem('token')?.substring(0, 20) + '...');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      console.log('✅ Token and user removed successfully');
-      console.log('🔍 After removal - localStorage.getItem("token"):', localStorage.getItem('token'));
+      console.log('Token and user removed successfully');
+      console.log('After removal - localStorage.getItem("token"):', localStorage.getItem('token'));
     } catch (error) {
-      console.error('💥 Error removing token from localStorage:', error);
+      console.error('Error removing token from localStorage:', error);
     }
   };
 
@@ -100,20 +100,20 @@ export const AuthProvider = ({ children }) => {
   // Initialize authentication on mount
   useEffect(() => {
     if (initialized) {
-      console.log('⏭️ Already initialized, skipping...');
+      console.log('Already initialized, skipping...');
       return;
     }
 
     const initializeAuth = async () => {
-      console.log('🚀 Initializing authentication...');
+      console.log('Initializing authentication...');
       
       // Only proceed if we have a token
       if (token && isTokenValid(token)) {
-        console.log('✅ Token already available, verifying with backend...');
+        console.log('Token already available, verifying with backend...');
         
         try {
           // Verify token with backend
-          console.log('🔍 Verifying token with backend...');
+          console.log('Verifying token with backend...');
           const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/verify`, {
             method: 'GET',
             headers: {
@@ -122,36 +122,36 @@ export const AuthProvider = ({ children }) => {
             }
           });
           
-          console.log('📡 Backend response status:', response.status);
+          console.log('Backend response status:', response.status);
           
           if (response.ok) {
             const userData = await response.json();
-            console.log('✅ Backend verification successful:', userData);
+            console.log('Backend verification successful:', userData);
             
             if (userData && userData.user) {
               setUser(userData.user);
               storeUser(userData.user);
-              console.log('👤 User authenticated:', userData.user.email, userData.user.role);
+              console.log('User authenticated:', userData.user.email, userData.user.role);
             } else {
-              console.error('❌ Invalid user data received:', userData);
+              console.error('Invalid user data received:', userData);
               throw new Error('Invalid user data received');
             }
           } else {
             const errorData = await response.json();
-            console.error('❌ Token verification failed:', response.status, errorData);
+            console.error('Token verification failed:', response.status, errorData);
             throw new Error(`Token verification failed: ${errorData.message || response.statusText}`);
           }
         } catch (error) {
-          console.error('💥 Authentication initialization error:', error);
+          console.error('Authentication initialization error:', error);
           // Clear invalid token
           setToken(null);
           setUser(null);
         }
       } else {
-        console.log('ℹ️ No valid token found, staying unauthenticated');
+        console.log('No valid token found, staying unauthenticated');
       }
       
-      console.log('🏁 Authentication initialization completed');
+      console.log('Authentication initialization completed');
       setLoading(false);
       setInitialized(true);
     };
@@ -161,13 +161,13 @@ export const AuthProvider = ({ children }) => {
 
   // Update localStorage when token changes
   useEffect(() => {
-    console.log('🔄 Token state changed:', token ? token.substring(0, 20) + '...' : 'null');
+    console.log('Token state changed:', token ? token.substring(0, 20) + '...' : 'null');
     
     if (token && isTokenValid(token)) {
-      console.log('💾 Token is valid, storing in localStorage...');
+      console.log('Token is valid, storing in localStorage...');
       storeToken(token);
     } else {
-      console.log('🗑️ Token is invalid or null, removing from localStorage...');
+      console.log('Token is invalid or null, removing from localStorage...');
       removeStoredToken();
     }
   }, [token]);

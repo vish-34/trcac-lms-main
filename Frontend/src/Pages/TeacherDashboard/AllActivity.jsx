@@ -13,10 +13,14 @@ const AllActivity = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalActivities, setTotalActivities] = useState(0);
   const [filters, setFilters] = useState({
+    searchTerm: '',
     activityType: 'all',
     college: 'all',
     class: 'all',
-    timeframe: 'all'
+    timeframe: 'all',
+    subject: 'all',
+    engagementLevel: 'all',
+    dateRange: 'all'
   });
 
   const activitiesPerPage = 50;
@@ -74,13 +78,13 @@ const AllActivity = () => {
   };
 
   const getActivityDescription = (activity) => {
-    switch (activity.type) {
+    switch (activity.activityType) {
       case 'lecture_viewed':
-        return `Watched lecture: ${activity.details?.lectureTitle || 'Unknown'}`;
+        return `Watched lecture: ${activity.activityDetails?.lectureTitle || 'Unknown'}`;
       case 'assignment_submitted':
-        return `Submitted assignment: ${activity.details?.assignmentTitle || 'Unknown'}`;
+        return `Submitted assignment: ${activity.activityDetails?.assignmentTitle || 'Unknown'}`;
       case 'assignment_downloaded':
-        return `Downloaded assignment: ${activity.details?.assignmentTitle || 'Unknown'}`;
+        return `Downloaded assignment: ${activity.activityDetails?.assignmentTitle || 'Unknown'}`;
       case 'login':
         return 'Logged into the system';
       default:
@@ -122,6 +126,39 @@ const AllActivity = () => {
     setCurrentPage(page);
   };
 
+  const getUniqueSubjects = () => {
+    const subjects = [...new Set(activities.map(activity => {
+      if (activity.details?.lectureSubject) return activity.details.lectureSubject;
+      if (activity.details?.assignmentSubject) return activity.details.assignmentSubject;
+      return null;
+    }).filter(Boolean))];
+    return subjects.sort();
+  };
+
+  const getEngagementLevel = (activity) => {
+    if (activity.type === 'lecture_viewed') {
+      const percentage = activity.details?.watchPercentage || 0;
+      if (percentage >= 90) return 'high';
+      if (percentage >= 50) return 'medium';
+      return 'low';
+    }
+    return 'medium'; // Default for other activity types
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      searchTerm: '',
+      activityType: 'all',
+      college: 'all',
+      class: 'all',
+      timeframe: 'all',
+      subject: 'all',
+      engagementLevel: 'all',
+      dateRange: 'all'
+    });
+    setCurrentPage(1);
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -149,15 +186,37 @@ const AllActivity = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg p-4 shadow-sm mb-6">
-          <h3 className="text-lg font-semibold mb-4">Filters</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+            <button
+              onClick={resetFilters}
+              className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+            >
+              Reset All
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {/* Search */}
+            <div className="lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+              <input
+                type="text"
+                placeholder="Search by student name, email, activity..."
+                value={filters.searchTerm}
+                onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+            
+            {/* Activity Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Activity Type</label>
               <select
                 value={filters.activityType}
                 onChange={(e) => handleFilterChange('activityType', e.target.value)}
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="all">All Activities</option>
                 <option value="lecture_viewed">Lectures</option>
@@ -167,12 +226,13 @@ const AllActivity = () => {
               </select>
             </div>
 
+            {/* College */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">College</label>
               <select
                 value={filters.college}
                 onChange={(e) => handleFilterChange('college', e.target.value)}
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="all">All Colleges</option>
                 <option value="Degree College">Degree College</option>
@@ -180,12 +240,13 @@ const AllActivity = () => {
               </select>
             </div>
 
+            {/* Class */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Class</label>
               <select
                 value={filters.class}
                 onChange={(e) => handleFilterChange('class', e.target.value)}
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="all">All Classes</option>
                 <option value="FYJC">FYJC</option>
@@ -205,12 +266,43 @@ const AllActivity = () => {
               </select>
             </div>
 
+            {/* Subject */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+              <select
+                value={filters.subject}
+                onChange={(e) => handleFilterChange('subject', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="all">All Subjects</option>
+                {getUniqueSubjects().map(subject => (
+                  <option key={subject} value={subject}>{subject}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Engagement Level */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Engagement Level</label>
+              <select
+                value={filters.engagementLevel}
+                onChange={(e) => handleFilterChange('engagementLevel', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="all">All Levels</option>
+                <option value="high">High (&ge; 90%)</option>
+                <option value="medium">Medium (50-89%)</option>
+                <option value="low">Low (&lt; 50%)</option>
+              </select>
+            </div>
+
+            {/* Timeframe */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Timeframe</label>
               <select
                 value={filters.timeframe}
                 onChange={(e) => handleFilterChange('timeframe', e.target.value)}
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="all">All Time</option>
                 <option value="1h">Last Hour</option>
@@ -219,6 +311,121 @@ const AllActivity = () => {
                 <option value="30d">Last 30 Days</option>
               </select>
             </div>
+
+            {/* Date Range */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+              <select
+                value={filters.dateRange}
+                onChange={(e) => handleFilterChange('dateRange', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="week">This Week</option>
+                <option value="lastWeek">Last Week</option>
+                <option value="month">This Month</option>
+                <option value="lastMonth">Last Month</option>
+              </select>
+            </div>
+          </div>
+          
+          {/* Active Filters Display */}
+          <div className="mt-6 flex flex-wrap gap-2">
+            {filters.searchTerm && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
+                Search: {filters.searchTerm}
+                <button
+                  onClick={() => handleFilterChange('searchTerm', '')}
+                  className="ml-2 text-indigo-600 hover:text-indigo-800"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {filters.activityType !== 'all' && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
+                Type: {getActivityTypeLabel(filters.activityType)}
+                <button
+                  onClick={() => handleFilterChange('activityType', 'all')}
+                  className="ml-2 text-indigo-600 hover:text-indigo-800"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {filters.college !== 'all' && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
+                College: {filters.college}
+                <button
+                  onClick={() => handleFilterChange('college', 'all')}
+                  className="ml-2 text-indigo-600 hover:text-indigo-800"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {filters.class !== 'all' && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
+                Class: {filters.class}
+                <button
+                  onClick={() => handleFilterChange('class', 'all')}
+                  className="ml-2 text-indigo-600 hover:text-indigo-800"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {filters.subject !== 'all' && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
+                Subject: {filters.subject}
+                <button
+                  onClick={() => handleFilterChange('subject', 'all')}
+                  className="ml-2 text-indigo-600 hover:text-indigo-800"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {filters.engagementLevel !== 'all' && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
+                Engagement: {filters.engagementLevel}
+                <button
+                  onClick={() => handleFilterChange('engagementLevel', 'all')}
+                  className="ml-2 text-indigo-600 hover:text-indigo-800"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {filters.timeframe !== 'all' && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
+                Time: {filters.timeframe}
+                <button
+                  onClick={() => handleFilterChange('timeframe', 'all')}
+                  className="ml-2 text-indigo-600 hover:text-indigo-800"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {filters.dateRange !== 'all' && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
+                Date: {filters.dateRange}
+                <button
+                  onClick={() => handleFilterChange('dateRange', 'all')}
+                  className="ml-2 text-indigo-600 hover:text-indigo-800"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+          </div>
+          
+          {/* Results Count */}
+          <div className="mt-4 text-sm text-gray-600">
+            Showing {activities.length} of {totalActivities} activities
           </div>
         </div>
       </div>
@@ -253,7 +460,6 @@ const AllActivity = () => {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">College</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
@@ -261,7 +467,7 @@ const AllActivity = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {activities.map((activity) => (
-                  <tr key={activity.id} className="hover:bg-gray-50">
+                  <tr key={activity._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
@@ -277,14 +483,9 @@ const AllActivity = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        {getActivityIcon(activity.type)}
+                        {getActivityIcon(activity.activityType)}
                         <span className="ml-2 text-sm text-gray-700">{getActivityDescription(activity)}</span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {getActivityTypeLabel(activity.type)}
-                      </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">{activity.college}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{activity.class}</td>

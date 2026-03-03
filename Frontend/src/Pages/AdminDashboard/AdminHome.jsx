@@ -39,7 +39,7 @@ export default function AdminHome(){
 
           <h1 className="text-xl sm:text-3xl font-semibold leading-tight">
 
-            Welcome back, {displayName} 👋
+            Welcome back, {displayName} 
 
           </h1>
 
@@ -157,11 +157,11 @@ export default function AdminHome(){
 
         <div className="bg-white shadow rounded-xl p-5 sm:p-6 space-y-3">
 
-          <AlertCard text="⚠ Attendance below 75% in SYBSc CS"/>
+          <AlertCard text="Attendance below 75% in SYBSc CS"/>
 
-          <AlertCard text="📄 15 Assignments pending review"/>
+          <AlertCard text="15 Assignments pending review"/>
 
-          <AlertCard text="📅 DBMS Mid Term scheduled Friday"/>
+          <AlertCard text="DBMS Mid Term scheduled Friday"/>
 
         </div>
 

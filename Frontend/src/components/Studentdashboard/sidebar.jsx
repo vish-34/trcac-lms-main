@@ -6,7 +6,8 @@ import {
   BookOpen,
   LogOut,
   Menu,
-  X
+  X,
+  CheckCircle
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -62,11 +63,17 @@ export default function Sidebar() {
       icon:<FileText size={20}/>
     },
 
-    // {
-    //   name:"exams",
-    //   path:"/studentdashboard/exams",
-    //   icon:<FileText size={20}/>
-    // }
+    {
+      name:"Attendance",
+      path:"/studentdashboard/attendance",
+      icon:<CheckCircle size={20}/>
+    },
+
+    {
+      name:"Exams",
+      path:"/studentdashboard/exams",
+      icon:<FileText size={20}/>
+    }
 
   ];
 

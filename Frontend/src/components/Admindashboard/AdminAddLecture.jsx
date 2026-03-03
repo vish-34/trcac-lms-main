@@ -255,9 +255,9 @@ export default function AdminAddLecture({ onClose }) {
                 submissionData
             );
 
-            console.log('✅ Lecture created successfully:', response.data);
+            console.log('Lecture created successfully:', response.data);
             
-            setMessage(`Lecture Added Successfully! 🎉 Lecture ID: ${response.data.lecture._id}`);
+            setMessage(`Lecture Added Successfully! Lecture ID: ${response.data.lecture._id}`);
 
             // Store the created lecture info for reference
             if (response.data.lecture) {
@@ -292,7 +292,7 @@ export default function AdminAddLecture({ onClose }) {
 
             console.error('Error adding lecture:', error.response?.data || error.message);
 
-            setMessage(`Error adding lecture: ${error.response?.data?.message || 'Unknown error'} ❌`);
+            setMessage(`Error adding lecture: ${error.response?.data?.message || 'Unknown error'}`);
 
         }
         finally {

@@ -445,7 +445,11 @@ router.get("/all/:teacherId", async (req, res) => {
       activityType, 
       college, 
       class: studentClass, 
-      timeframe 
+      timeframe,
+      subject,
+      engagementLevel,
+      dateRange,
+      searchTerm
     } = req.query;
 
     // Calculate skip for pagination
@@ -465,6 +469,35 @@ router.get("/all/:teacherId", async (req, res) => {
     
     if (studentClass && studentClass !== 'all') {
       query.class = studentClass;
+    }
+
+    // Subject filter - search in activityDetails
+    if (subject && subject !== 'all') {
+      query['$or'] = [
+        { 'activityDetails.lectureSubject': subject },
+        { 'activityDetails.assignmentSubject': subject }
+      ];
+    }
+
+    // Search term filter - search in student info and activity details
+    if (searchTerm && searchTerm !== 'all') {
+      const searchRegex = new RegExp(searchTerm, 'i');
+      const searchConditions = [
+        { studentName: searchRegex },
+        { studentEmail: searchRegex },
+        { 'activityDetails.lectureTitle': searchRegex },
+        { 'activityDetails.assignmentTitle': searchRegex }
+      ];
+      
+      if (query['$or']) {
+        query['$and'] = [
+          { '$or': query['$or'] },
+          { '$or': searchConditions }
+        ];
+        delete query['$or'];
+      } else {
+        query['$or'] = searchConditions;
+      }
     }
 
     // Add timeframe filter
@@ -492,18 +525,75 @@ router.get("/all/:teacherId", async (req, res) => {
       }
     }
 
+    // Add date range filter
+    if (dateRange && dateRange !== 'all') {
+      const now = new Date();
+      let startDate, endDate;
+      
+      switch (dateRange) {
+        case 'today':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+          break;
+        case 'yesterday':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'week':
+          startDate = new Date(now.getTime() - now.getDay() * 24 * 60 * 60 * 1000);
+          endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'lastWeek':
+          startDate = new Date(now.getTime() - (now.getDay() + 7) * 24 * 60 * 60 * 1000);
+          endDate = new Date(now.getTime() - now.getDay() * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          break;
+        case 'lastMonth':
+          startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+          break;
+      }
+      
+      if (startDate && endDate) {
+        query.timestamp = { $gte: startDate, $lt: endDate };
+      }
+    }
+
     // Get total count for pagination
     const total = await StudentActivity.countDocuments(query);
 
     // Get activities with pagination
-    const activities = await StudentActivity.find(query)
+    let activities = await StudentActivity.find(query)
       .sort({ timestamp: -1 })
       .skip(skip)
       .limit(parseInt(limit))
       .populate('studentId', 'fullName email')
       .lean();
 
-    // Calculate total pages
+    // Apply engagement level filter (client-side filtering)
+    if (engagementLevel && engagementLevel !== 'all') {
+      activities = activities.filter(activity => {
+        if (activity.activityType === 'lecture_viewed') {
+          const percentage = activity.activityDetails?.watchPercentage || 0;
+          switch (engagementLevel) {
+            case 'high':
+              return percentage >= 90;
+            case 'medium':
+              return percentage >= 50 && percentage < 90;
+            case 'low':
+              return percentage < 50;
+            default:
+              return true;
+          }
+        }
+        return engagementLevel === 'medium'; // Default for other activity types
+      });
+    }
+
+    // Calculate total pages (adjust for client-side filtering)
     const totalPages = Math.ceil(total / parseInt(limit));
 
     res.json({

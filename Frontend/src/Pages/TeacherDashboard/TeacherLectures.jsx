@@ -13,10 +13,10 @@ export default function TeacherLectures() {
   useEffect(() => {
     const fetchTeacherLectures = async () => {
       try {
-        console.log('📚 Fetching lectures for teacher:', user?.fullName);
+        console.log('Fetching lectures for teacher:', user?.fullName);
         
         if (!user || !user.fullName) {
-          console.log('❌ No user or fullName found, skipping fetch');
+          console.log('No user or fullName found, skipping fetch');
           setLectures([]);
           return;
         }
@@ -25,7 +25,7 @@ export default function TeacherLectures() {
           `${import.meta.env.VITE_API_URL}/api/lecture/teacher/${user.fullName}`
         );
 
-        console.log('✅ Teacher lectures API response:', {
+        console.log('Teacher lectures API response:', {
           status: res.status,
           dataLength: res.data?.length || 0,
           dataType: typeof res.data
@@ -33,7 +33,7 @@ export default function TeacherLectures() {
         
         // Log each lecture found
         if (res.data && Array.isArray(res.data)) {
-          console.log('📋 Lectures found for', user.fullName, ':');
+          console.log('Lectures found for', user.fullName, ':');
           res.data.forEach((lecture, index) => {
             console.log(`   ${index + 1}. ${lecture.title} (${lecture.subject}) - ID: ${lecture._id}`);
           });
@@ -41,15 +41,15 @@ export default function TeacherLectures() {
         
         setLectures(res.data || []);
       } catch (err) {
-        console.error("❌ Error fetching teacher lectures:", err);
+        console.error("Error fetching teacher lectures:", err);
         console.error("Error response:", err.response?.data);
         console.error("Error status:", err.response?.status);
         
         // Set appropriate error message
         if (err.response?.status === 404) {
-          console.log('ℹ️  No lectures found for teacher:', user?.fullName);
+          console.log('No lectures found for teacher:', user?.fullName);
         } else if (err.response?.status === 500) {
-          console.error('💥 Server error occurred');
+          console.error('Server error occurred');
         }
         
         setLectures([]);

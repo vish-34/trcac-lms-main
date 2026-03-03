@@ -1,15 +1,27 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
 
 export default function Assignments() {
   const [assignments, setAssignments] = useState([]);
+  const [allAssignments, setAllAssignments] = useState([]); // Store all assignments for client-side filtering
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submissionError, setSubmissionError] = useState("");
-  const [studentSubmissions, setStudentSubmissions] = useState({});
+
+  // New filter states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all"); // all, not-submitted, submitted, graded, overdue
+  const [deadlineFilter, setDeadlineFilter] = useState("all"); // all, overdue, today, week, month
+  const [sortBy, setSortBy] = useState("newest"); // newest, oldest, deadline-soonest, deadline-latest, title
+  const [subjectFilter, setSubjectFilter] = useState("");
+  const [teacherFilter, setTeacherFilter] = useState("");
+  const [classFilter, setClassFilter] = useState("");
+  const [collegeFilter, setCollegeFilter] = useState("");
+  const [fileTypeFilter, setFileTypeFilter] = useState("");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -27,31 +39,21 @@ export default function Assignments() {
       
       console.log('Student assignments response:', res.data);
       
-      setAssignments(res.data.assignments || []);
+      const fetchedAssignments = res.data.assignments || [];
+      setAllAssignments(fetchedAssignments); // Store all assignments for filtering
+      
+      setAssignments(fetchedAssignments);
       
       // Set student info if available
       if (res.data.studentInfo) {
         console.log('Student info:', res.data.studentInfo);
       }
       
-      // Fetch submission status for each assignment
-      const submissionsData = {};
-      await Promise.all(
-        res.data.assignments.map(async (assignment) => {
-          try {
-            const submissionsRes = await axios.get(
-              `${import.meta.env.VITE_API_URL}/api/assignments/submissions/${assignment._id}`
-            );
-            const studentSubmission = submissionsRes.data.submissions.find(
-              sub => sub.studentId === user?.id
-            );
-            submissionsData[assignment._id] = studentSubmission || null;
-          } catch (err) {
-            submissionsData[assignment._id] = null;
-          }
-        })
-      );
-      setStudentSubmissions(submissionsData);
+      // The backend already provides submissionStatus, so we don't need separate API calls
+      // Just log the status for debugging
+      fetchedAssignments.forEach(assignment => {
+        console.log(`� Assignment ${assignment._id} status from backend: ${assignment.submissionStatus}`);
+      });
       
     } catch (err) {
       console.error("Error fetching assignments:", err);
@@ -84,59 +86,198 @@ export default function Assignments() {
     } else if (diffDays <= 3) {
       return { status: "soon", text: `Due in ${diffDays} days`, color: "text-yellow-600" };
     } else {
-      return { status: "plenty", text: `Due in ${diffDays} days`, color: "text-green-600" };
+      return { status: "plenty", text: `Due in ${diffDays} days`, color: "text-blue-600" };
     }
   };
 
-  const getSubmissionStatus = (assignment) => {
-    // Use the submissionStatus from backend if available, otherwise check local state
-    if (assignment.submissionStatus) {
-      if (assignment.submissionStatus === 'submitted') {
-        return {
-          status: "submitted",
-          text: "Submitted",
-          color: "text-green-600",
-          bgColor: "bg-green-100"
-        };
-      } else if (assignment.submissionStatus === 'overdue') {
-        return {
-          status: "overdue",
-          text: "Overdue",
-          color: "text-red-600",
-          bgColor: "bg-red-100"
-        };
-      }
+  // =======================
+  // FILTERING & SORTING LOGIC
+  // =======================
+
+  // Get unique values for filters
+  const getUniqueSubjects = () => {
+    const subjects = [...new Set(allAssignments.map(assignment => assignment.subject).filter(Boolean))];
+    return subjects.sort();
+  };
+
+  const getUniqueTeachers = () => {
+    const teachers = [...new Set(allAssignments.map(assignment => assignment.teacherName).filter(Boolean))];
+    return teachers.sort();
+  };
+
+  const getUniqueClasses = () => {
+    const classes = [...new Set(allAssignments.map(assignment => assignment.class).filter(Boolean))];
+    return classes.sort();
+  };
+
+  const getUniqueFileTypes = () => {
+    const fileTypes = [...new Set(allAssignments.map(assignment => assignment.fileType).filter(Boolean))];
+    return fileTypes.sort();
+  };
+
+  // Get assignment status based on submission and deadline
+  const getAssignmentStatus = (assignment) => {
+    const backendStatus = assignment.submissionStatus;
+    const deadlineStatus = getDeadlineStatus(assignment.deadline);
+    
+    console.log(`Getting status for assignment ${assignment._id}:`, {
+      backendStatus,
+      deadlineStatus: deadlineStatus.status
+    });
+    
+    // Use backend status first, then check deadline for overdue assignments
+    if (backendStatus === 'submitted' || backendStatus === 'graded') {
+      return backendStatus;
     }
     
-    // Fallback to local state
-    if (studentSubmissions[assignment._id]) {
-      return {
-        status: "submitted",
-        text: "Submitted",
-        color: "text-green-600",
-        bgColor: "bg-green-100"
-      };
-    }
-    
-    // Check if overdue
+    if (deadlineStatus.status === 'overdue') return 'overdue';
+    return 'not-submitted';
+  };
+
+  // Check if assignment matches deadline filter
+  const matchesDeadlineFilter = (assignment, filter) => {
     const now = new Date();
     const deadline = new Date(assignment.deadline);
+    const diffTime = deadline - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    if (deadline < now) {
-      return {
-        status: "overdue",
-        text: "Overdue",
-        color: "text-red-600",
-        bgColor: "bg-red-100"
-      };
+    switch (filter) {
+      case 'overdue':
+        return diffDays < 0;
+      case 'today':
+        return diffDays === 0;
+      case 'week':
+        return diffDays >= 0 && diffDays <= 7;
+      case 'month':
+        return diffDays >= 0 && diffDays <= 30;
+      default:
+        return true;
     }
+  };
+
+  // Filter and sort assignments
+  const getFilteredAndSortedAssignments = () => {
+    let filtered = [...allAssignments];
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(assignment =>
+        assignment.title.toLowerCase().includes(query) ||
+        assignment.subject.toLowerCase().includes(query) ||
+        assignment.teacherName.toLowerCase().includes(query) ||
+        (assignment.description && assignment.description.toLowerCase().includes(query))
+      );
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      console.log(`Filtering by status: ${statusFilter}`);
+      const beforeFilter = filtered.length;
+      filtered = filtered.filter(assignment => {
+        const status = getAssignmentStatus(assignment);
+        console.log(`Assignment ${assignment._id} status: ${status}`);
+        return status === statusFilter;
+      });
+      console.log(`Status filter result: ${beforeFilter} -> ${filtered.length} assignments`);
+    }
+
+    // Deadline filter
+    if (deadlineFilter !== 'all') {
+      filtered = filtered.filter(assignment => matchesDeadlineFilter(assignment, deadlineFilter));
+    }
+
+    // Subject filter
+    if (subjectFilter) {
+      filtered = filtered.filter(assignment => assignment.subject === subjectFilter);
+    }
+
+    // Teacher filter
+    if (teacherFilter) {
+      filtered = filtered.filter(assignment => assignment.teacherName === teacherFilter);
+    }
+
+    // Class filter
+    if (classFilter) {
+      filtered = filtered.filter(assignment => assignment.class === classFilter);
+    }
+
+    // College filter
+    if (collegeFilter) {
+      filtered = filtered.filter(assignment => assignment.college === collegeFilter);
+    }
+
+    // File type filter
+    if (fileTypeFilter) {
+      filtered = filtered.filter(assignment => assignment.fileType === fileTypeFilter);
+    }
+
+    // Sort assignments
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        case 'oldest':
+          return new Date(a.createdAt) - new Date(b.createdAt);
+        case 'deadline-soonest':
+          return new Date(a.deadline) - new Date(b.deadline);
+        case 'deadline-latest':
+          return new Date(b.deadline) - new Date(a.deadline);
+        case 'title':
+          return a.title.localeCompare(b.title);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  };
+
+  // Apply filters whenever dependencies change
+  useEffect(() => {
+    console.log(`Applying filters - dependencies changed:`, {
+      allAssignmentsLength: allAssignments.length,
+      searchQuery,
+      statusFilter,
+      deadlineFilter,
+      sortBy,
+      subjectFilter,
+      teacherFilter,
+      classFilter,
+      collegeFilter,
+      fileTypeFilter
+    });
     
-    return {
-      status: "pending",
-      text: "Pending",
-      color: "text-yellow-600",
-      bgColor: "bg-yellow-100"
-    };
+    const filtered = getFilteredAndSortedAssignments();
+    console.log(`Filtered result: ${filtered.length} assignments`);
+    setAssignments(filtered);
+  }, [allAssignments, searchQuery, statusFilter, deadlineFilter, sortBy, subjectFilter, teacherFilter, classFilter, collegeFilter, fileTypeFilter]);
+
+  // Reset all filters
+  const resetFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setDeadlineFilter("all");
+    setSortBy("newest");
+    setSubjectFilter("");
+    setTeacherFilter("");
+    setClassFilter("");
+    setCollegeFilter("");
+    setFileTypeFilter("");
+  };
+
+  // Get active filters count
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (searchQuery) count++;
+    if (statusFilter !== "all") count++;
+    if (deadlineFilter !== "all") count++;
+    if (subjectFilter) count++;
+    if (teacherFilter) count++;
+    if (classFilter) count++;
+    if (collegeFilter) count++;
+    if (fileTypeFilter) count++;
+    return count;
   };
 
   const handleSubmitAssignment = (assignment) => {
@@ -150,7 +291,7 @@ export default function Assignments() {
     }
     
     // Check if already submitted
-    if (studentSubmissions[assignment._id]) {
+    if (assignment.submissionStatus === 'submitted' || assignment.submissionStatus === 'graded') {
       setSubmissionError("You have already submitted this assignment");
       setTimeout(() => setSubmissionError(""), 3000);
       return;
@@ -185,6 +326,277 @@ export default function Assignments() {
       <div>
         <h1 className="text-xl sm:text-2xl font-semibold">Assignments</h1>
         <p className="text-gray-600 mt-1">View and download your assignments</p>
+      </div>
+
+      {/* ENHANCED FILTERING SECTION */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        {/* Search and Quick Filters */}
+        <div className="flex flex-col lg:flex-row gap-4 mb-4">
+          {/* Search Bar */}
+          <div className="flex-1">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search assignments, subjects, or teachers..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+              <svg className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="all">All Status</option>
+            <option value="not-submitted">Not Submitted</option>
+            <option value="submitted">Submitted</option>
+            <option value="graded">Graded</option>
+            <option value="overdue">Overdue</option>
+          </select>
+
+          {/* Deadline Filter */}
+          <select
+            value={deadlineFilter}
+            onChange={(e) => setDeadlineFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="all">All Deadlines</option>
+            <option value="overdue">Overdue</option>
+            <option value="today">Due Today</option>
+            <option value="week">Due This Week</option>
+            <option value="month">Due This Month</option>
+          </select>
+
+          {/* Sort By */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="deadline-soonest">Most Upcoming Deadline</option>
+            <option value="deadline-latest">Least Upcoming Deadline</option>
+            <option value="title">Title A-Z</option>
+          </select>
+
+          {/* Advanced Filters Toggle */}
+          <button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            Advanced Filters
+            {getActiveFiltersCount() > 0 && (
+              <span className="bg-indigo-600 text-white text-xs px-2 py-1 rounded-full">
+                {getActiveFiltersCount()}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Active Filters Display */}
+        {getActiveFiltersCount() > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {searchQuery && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
+                Search: {searchQuery}
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="ml-1 hover:text-indigo-600"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {statusFilter !== "all" && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
+                Status: {statusFilter.replace('-', ' ')}
+                <button
+                  onClick={() => setStatusFilter("all")}
+                  className="ml-1 hover:text-indigo-600"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {deadlineFilter !== "all" && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
+                Deadline: {deadlineFilter.replace('-', ' ')}
+                <button
+                  onClick={() => setDeadlineFilter("all")}
+                  className="ml-1 hover:text-indigo-600"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {subjectFilter && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
+                Subject: {subjectFilter}
+                <button
+                  onClick={() => setSubjectFilter("")}
+                  className="ml-1 hover:text-indigo-600"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {teacherFilter && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
+                Teacher: {teacherFilter}
+                <button
+                  onClick={() => setTeacherFilter("")}
+                  className="ml-1 hover:text-indigo-600"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {classFilter && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
+                Class: {classFilter}
+                <button
+                  onClick={() => setClassFilter("")}
+                  className="ml-1 hover:text-indigo-600"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {collegeFilter && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
+                College: {collegeFilter}
+                <button
+                  onClick={() => setCollegeFilter("")}
+                  className="ml-1 hover:text-indigo-600"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {fileTypeFilter && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
+                File Type: {fileTypeFilter}
+                <button
+                  onClick={() => setFileTypeFilter("")}
+                  className="ml-1 hover:text-indigo-600"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            <button
+              onClick={resetFilters}
+              className="text-sm text-red-600 hover:text-red-800"
+            >
+              Reset All
+            </button>
+          </div>
+        )}
+
+        {/* Advanced Filters Panel */}
+        <AnimatePresence>
+          {showAdvancedFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="border-t pt-4 space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Subject Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                  <select
+                    value={subjectFilter}
+                    onChange={(e) => setSubjectFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="">All Subjects</option>
+                    {getUniqueSubjects().map(subject => (
+                      <option key={subject} value={subject}>{subject}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Teacher Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Teacher</label>
+                  <select
+                    value={teacherFilter}
+                    onChange={(e) => setTeacherFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="">All Teachers</option>
+                    {getUniqueTeachers().map(teacher => (
+                      <option key={teacher} value={teacher}>{teacher}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Class Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
+                  <select
+                    value={classFilter}
+                    onChange={(e) => setClassFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="">All Classes</option>
+                    {getUniqueClasses().map(cls => (
+                      <option key={cls} value={cls}>{cls}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* College Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">College</label>
+                  <select
+                    value={collegeFilter}
+                    onChange={(e) => setCollegeFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="">All Colleges</option>
+                    <option value="Junior College">Junior College</option>
+                    <option value="Degree College">Degree College</option>
+                  </select>
+                </div>
+
+                {/* File Type Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">File Type</label>
+                  <select
+                    value={fileTypeFilter}
+                    onChange={(e) => setFileTypeFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="">All File Types</option>
+                    {getUniqueFileTypes().map(fileType => (
+                      <option key={fileType} value={fileType}>{fileType}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Results Count */}
+        <div className="text-sm text-gray-600 border-t pt-3">
+          Showing {assignments.length} of {allAssignments.length} assignments
+          {getActiveFiltersCount() > 0 && ` • ${getActiveFiltersCount()} filter${getActiveFiltersCount() > 1 ? 's' : ''} applied`}
+        </div>
       </div>
 
       {error && (

@@ -23,11 +23,21 @@ export default function Home() {
 
   const [continueProgress, setContinueProgress] = useState(null);
 
+  const [lectureHistory, setLectureHistory] = useState([]);
+
   const [isLoading, setIsLoading] = useState(true);
 
   const [error, setError] = useState(null);
 
   const [refreshKey, setRefreshKey] = useState(0); // Key to force refresh
+
+  const [dashboardStats, setDashboardStats] = useState({
+    attendance: { percentage: 0, totalLectures: 0, presentLectures: 0 },
+    lecturesCompleted: 0,
+    assignments: { pending: 0, total: 0 },
+    subjects: 0,
+    subjectsInfo: { semesters: null, college: null }
+  });
 
 
 
@@ -45,14 +55,14 @@ export default function Home() {
 
   // Function to refresh continue learning data
   const refreshContinueLearning = () => {
-    console.log('🔄 Refreshing continue learning data...');
+    console.log('Refreshing continue learning data...');
     setRefreshKey(prev => prev + 1);
   };
 
   // Function to navigate to lectures with resume data
   const handleContinueWatching = () => {
     if (continueLecture && continueProgress) {
-      console.log('🎬 Navigating to lectures with resume data:', {
+      console.log('Navigating to lectures with resume data:', {
         lectureId: continueLecture._id,
         resumeTime: Math.floor(continueProgress.currentTime),
         lectureTitle: continueLecture.title
@@ -69,7 +79,7 @@ export default function Home() {
       // Navigate to lectures page
       navigate(`/studentdashboard/lectures`);
     } else {
-      console.log('❌ No continue learning data available');
+      console.log('No continue learning data available');
       navigate(`/studentdashboard/lectures`);
     }
   };
@@ -78,51 +88,81 @@ export default function Home() {
 
   useEffect(() => {
 
-    const fetchContinue = async () => {
+    const fetchData = async () => {
 
       try {
 
         const studentId = user?.id;
 
+        console.log('User object:', user);
+        console.log('User ID:', studentId);
+        console.log('User ID type:', typeof studentId);
+        console.log('User available fields:', user ? Object.keys(user) : 'No user object');
+
         if (!studentId) {
-          console.log('❌ No studentId found, skipping continue learning fetch');
+          console.log('No studentId found, skipping data fetch');
           setIsLoading(false);
           return;
         }
 
-        console.log('🔄 Fetching continue learning data for student:', studentId);
+        console.log('Fetching data for student:', studentId);
         setIsLoading(true);
         setError(null);
 
-        const res = await axios.get(
+        // Fetch continue learning data
+        const continueRes = await axios.get(
           `${import.meta.env.VITE_API_URL}/api/progress/continue/${studentId}`,
         );
 
-        console.log('✅ Continue learning API response:', res.data);
+        console.log('Continue learning API response:', continueRes.data);
 
-        setContinueLecture(res.data?.lecture || null);
-        setContinueProgress(res.data?.progress || null);
+        setContinueLecture(continueRes.data?.lecture || null);
+        setContinueProgress(continueRes.data?.progress || null);
+
+        // Fetch lecture history (first 2 items)
+        const historyRes = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/progress/history/${studentId}`,
+          { params: { page: 1, limit: 2 } }
+        );
+
+        console.log('Lecture history API response:', historyRes.data);
+        setLectureHistory(historyRes.data.lectures || []);
+
+        // Fetch dashboard statistics
+        try {
+          const statsRes = await axios.get(
+            `${import.meta.env.VITE_API_URL}/api/progress/dashboard-stats/${studentId}`
+          );
+          
+          console.log('Dashboard statistics API response:', statsRes.data);
+          console.log('Subjects info:', statsRes.data.subjectsInfo);
+          setDashboardStats(statsRes.data);
+        } catch (statsError) {
+          console.error('Error fetching dashboard statistics:', statsError);
+          // Continue with default values if stats fetch fails
+        }
 
         // Log the continue learning data
-        if (res.data?.lecture && res.data?.progress) {
-          console.log('📚 Continue learning data:', {
-            lectureId: res.data.lecture._id,
-            lectureTitle: res.data.lecture.title,
-            subject: res.data.lecture.subject,
-            currentTime: res.data.progress.currentTime,
-            duration: res.data.progress.duration,
-            percentage: Math.round((res.data.progress.currentTime / res.data.progress.duration) * 100)
+        if (continueRes.data?.lecture && continueRes.data?.progress) {
+          console.log('Continue learning data:', {
+            lectureId: continueRes.data.lecture._id,
+            lectureTitle: continueRes.data.lecture.title,
+            subject: continueRes.data.lecture.subject,
+            currentTime: continueRes.data.progress.currentTime,
+            duration: continueRes.data.progress.duration,
+            percentage: Math.round((continueRes.data.progress.currentTime / continueRes.data.progress.duration) * 100)
           });
         } else {
-          console.log('ℹ️  No continue learning data found');
+          console.log('No continue learning data found');
         }
 
       } catch (err) {
 
-        console.error('❌ Continue learning fetch error:', err);
-        setError('Failed to load continue learning data');
+        console.error('Data fetch error:', err);
+        setError('Failed to load data');
         setContinueLecture(null);
         setContinueProgress(null);
+        setLectureHistory([]);
 
       } finally {
 
@@ -134,7 +174,7 @@ export default function Home() {
 
 
 
-    fetchContinue();
+    fetchData();
 
   }, [user, refreshKey]);
 
@@ -194,7 +234,7 @@ export default function Home() {
 
           <h1 className="text-2xl sm:text-3xl font-semibold">
 
-            Welcome back, {displayName} 👋
+            Welcome back, {displayName} 
 
           </h1>
 
@@ -226,70 +266,107 @@ export default function Home() {
 
       {/* STATS */}
 
-      <div
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Your Progress</h2>
+          <button
+            onClick={refreshContinueLearning}
+            className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1"
+          >
+            Refresh
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
 
-        className="
+        <div
 
-        grid
+          className="
 
-        grid-cols-2
+          grid
 
-        sm:grid-cols-2
+          grid-cols-2
 
-        md:grid-cols-4
+          sm:grid-cols-2
 
-        gap-4 sm:gap-5
+          md:grid-cols-4
 
-        "
+          gap-4 sm:gap-5
 
-      >
+          "
 
-        <StatCard
+        >
 
-          title="Attendance"
+        {isLoading ? (
+          // Loading skeleton for stats
+          <>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-xl p-6 shadow-sm animate-pulse">
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-6 bg-gray-200 rounded"></div>
+              </div>
+            ))}
+          </>
+        ) : (
+          <>
+            <StatCard
 
-          value="87%"
+              title="Attendance"
 
-          color="bg-yellow-100"
+              value={`${dashboardStats.attendance.percentage}%`}
 
-        />
+              color="bg-yellow-100"
 
-
-
-        <StatCard
-
-          title="Lectures Completed"
-
-          value="24"
-
-          color="bg-indigo-100"
-
-        />
-
-
-
-        <StatCard
-
-          title="Assignments"
-
-          value="3 Pending"
-
-          color="bg-pink-100"
-
-        />
+            />
 
 
 
-        <StatCard
+            <StatCard
 
-          title="Subjects"
+              title="Lectures Completed"
 
-          value="6 Active"
+              value={dashboardStats.lecturesCompleted.toString()}
 
-          color="bg-purple-100"
+              color="bg-indigo-100"
 
-        />
+            />
 
+
+
+            <StatCard
+
+              title="Assignments"
+
+              value={`${dashboardStats.assignments.pending} Pending`}
+
+              color="bg-pink-100"
+
+            />
+
+
+
+            <StatCard
+
+              title="Subjects"
+
+              value={dashboardStats.subjects.toString()}
+
+              color="bg-purple-100"
+
+              subtitle={
+                dashboardStats.subjectsInfo.semesters && dashboardStats.subjectsInfo.semesters.length > 0
+                  ? dashboardStats.subjectsInfo.semesters.join(' & ')
+                  : dashboardStats.subjectsInfo.year
+                    ? `Year ${dashboardStats.subjectsInfo.year}`
+                    : 'All Subjects'
+              }
+
+            />
+          </>
+        )}
+
+        </div>
       </div>
 
 
@@ -352,137 +429,199 @@ export default function Home() {
 
           </div>
 
-        ) : continueLecture && continueProgress ? (
+        ) : lectureHistory.length > 0 ? (
 
-          <motion.div
+          <div className="space-y-4">
 
-            initial={{ opacity: 0, y: 20 }}
+            {/* Show first 2 lectures */}
 
-            animate={{ opacity: 1, y: 0 }}
+            {lectureHistory.map((lecture, index) => (
 
-            className="bg-white rounded-xl shadow p-5 sm:p-6 flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center hover:shadow-lg transition-shadow duration-200"
+              <motion.div
 
-          >
+                key={lecture._id}
 
-            <div className="w-full">
+                initial={{ opacity: 0, y: 20 }}
 
-              <div className="flex items-start justify-between gap-3">
+                animate={{ opacity: 1, y: 0 }}
 
-                <div className="flex-1">
+                transition={{ delay: index * 0.1 }}
 
-                  <h3 className="font-medium text-gray-900 line-clamp-2">
+                className="bg-white rounded-xl shadow p-5 sm:p-6 hover:shadow-lg transition-shadow duration-200"
 
-                    {continueLecture.title}
+              >
 
-                  </h3>
+                <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-start">
 
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex-1">
 
-                    <p className="text-sm text-gray-500">
+                    <div className="flex items-start justify-between gap-3">
 
-                      {continueLecture.subject}
+                      <div className="flex-1">
 
-                    </p>
+                        <h3 className="font-medium text-gray-900 line-clamp-2">
 
-                    <span className="text-xs text-gray-400">•</span>
+                          {lecture.title}
 
-                    <p className="text-xs text-gray-500">
+                        </h3>
 
-                      {continueLecture.facultyName}
+                        <div className="flex items-center gap-2 mt-1">
 
-                    </p>
+                          <p className="text-sm text-gray-500">
+
+                            {lecture.subject}
+
+                          </p>
+
+                          <span className="text-xs text-gray-400">•</span>
+
+                          <p className="text-xs text-gray-500">
+
+                            {lecture.facultyName}
+
+                          </p>
+
+                        </div>
+
+                      </div>
+
+                      <div className="flex-shrink-0">
+
+                        <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+
+                          <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+
+                          </svg>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                    <div className="mt-4">
+
+                      <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+
+                        <span className="font-medium">Progress</span>
+
+                        <span className="font-semibold">{lecture.progress.percentageWatched}%</span>
+
+                      </div>
+
+                      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+
+                        <motion.div
+
+                          className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full"
+
+                          initial={{ width: 0 }}
+
+                          animate={{ width: `${lecture.progress.percentageWatched}%` }}
+
+                          transition={{ duration: 0.8, ease: "easeOut" }}
+
+                        />
+
+                      </div>
+
+                      <div className="flex justify-between items-center mt-2 text-xs text-gray-400">
+
+                        <span>
+
+                          {lecture.progress.watchTime} / {lecture.progress.totalTime}
+
+                        </span>
+
+                        <span>
+
+                          {lecture.progress.percentageWatched === 100 ? 'Completed' : lecture.progress.percentageWatched > 75 ? 'Almost done!' : lecture.progress.percentageWatched > 50 ? 'Halfway there' : 'Just started'}
+
+                        </span>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  <div className="flex-shrink-0 mt-4 sm:mt-0">
+
+                    <button
+
+                      onClick={() => {
+
+                        localStorage.setItem('resumeLectureData', JSON.stringify({
+
+                          lectureId: lecture._id,
+
+                          resumeTime: Math.floor(lecture.progress.currentTime),
+
+                          lectureTitle: lecture.title,
+
+                          subject: lecture.subject
+
+                        }));
+
+                        navigate(`/studentdashboard/lectures`);
+
+                      }}
+
+                      className="bg-indigo-600 text-white px-6 py-3 rounded-lg w-full sm:w-auto font-medium hover:bg-indigo-700 transition-colors duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+
+                    >
+
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+
+                      </svg>
+
+                      {lecture.progress.percentageWatched === 100 ? 'Rewatch' : 'Continue'}
+
+                    </button>
 
                   </div>
 
                 </div>
 
-                <div className="flex-shrink-0">
+              </motion.div>
 
-                  <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+            ))}
 
-                    <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            
 
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+            {/* View All Button */}
 
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="flex justify-center pt-2">
 
-                    </svg>
+              <button
 
-                  </div>
+                onClick={() => navigate('/studentdashboard/lecture-history')}
 
-                </div>
+                className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200 flex items-center gap-2"
 
-              </div>
+              >
 
-              <div className="mt-4">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
-                <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
 
-                  <span className="font-medium">Progress</span>
+                </svg>
 
-                  <span className="font-semibold">{continuePercent}%</span>
+                View All Lectures
 
-                </div>
-
-                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-
-                  <motion.div
-
-                    className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full"
-
-                    initial={{ width: 0 }}
-
-                    animate={{ width: `${continuePercent}%` }}
-
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-
-                  />
-
-                </div>
-
-                <div className="flex justify-between items-center mt-2 text-xs text-gray-400">
-
-                  <span>
-
-                    {Math.floor(continueProgress.currentTime / 60)}:{String(Math.floor(continueProgress.currentTime % 60)).padStart(2, '0')} / 
-
-                    {Math.floor(continueProgress.duration / 60)}:{String(Math.floor(continueProgress.duration % 60)).padStart(2, '0')}
-
-                  </span>
-
-                  <span>
-
-                    {continuePercent === 100 ? '✅ Completed' : continuePercent > 75 ? '🔥 Almost done!' : continuePercent > 50 ? '📚 Halfway there' : '🎯 Just started'}
-
-                  </span>
-
-                </div>
-
-              </div>
+              </button>
 
             </div>
 
-            <button
-
-              onClick={handleContinueWatching}
-
-              className="bg-indigo-600 text-white px-6 py-3 rounded-lg w-full sm:w-auto font-medium hover:bg-indigo-700 transition-colors duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
-
-            >
-
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-
-              </svg>
-
-              Resume Learning
-
-            </button>
-
-          </motion.div>
+          </div>
 
         ) : (
 
@@ -537,31 +676,67 @@ export default function Home() {
         )}
 
       </div>
+
       <SubjectSlider/>
+
     </div>
 
   );
+
 }
 
-function StatCard({ title, value, color }) {
+
+
+function StatCard({ title, value, color, subtitle }) {
+
   return (
+
     <div
+
       className={`${color} rounded-xl p-4 sm:p-5`}
+
     >
+
       <p className="text-sm text-gray-600">
+
         {title}
+
       </p>
+
       <h2 className="text-lg sm:text-xl font-semibold mt-2">
+
         {value}
+
       </h2>
+
+      {subtitle && (
+
+        <p className="text-xs text-gray-500 mt-1">
+
+          {subtitle}
+
+        </p>
+
+      )}
+
     </div>
+
   );
+
 }
+
+
 
 function Notice({ text }) {
+
   return (
+
     <div className="bg-white shadow rounded-xl p-5">
+
       {text}
+
     </div>
+
   );
+
 }

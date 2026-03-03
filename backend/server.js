@@ -23,6 +23,7 @@ import assignmentRoutes from "./routes/assignmentRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
 import examRoutes from "./routes/examRoutes.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
+import bulkEnrollmentRoutes from "./routes/bulkEnrollmentRoutes.js";
 
 dotenv.config();
 
@@ -132,7 +133,7 @@ app.use("/api/lecture", lectureRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api/subjects", subjectRoutes);
+app.use("/api/bulk-enrollment", bulkEnrollmentRoutes);
 
 // ======================
 // SECURE FILE SERVING

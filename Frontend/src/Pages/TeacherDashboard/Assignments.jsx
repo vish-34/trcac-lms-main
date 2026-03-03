@@ -41,7 +41,7 @@ export default function Assignments() {
     course: "B.Sc (CS)"
   });
 
-  // 🔄 Sync Semester with Year (for Degree College)
+  // Sync Semester with Year (for Degree College)
   useEffect(() => {
     if (formData.college === "Degree College") {
       if (formData.year === "FY") setFormData((prev) => ({ ...prev, semester: "1" }));
@@ -50,7 +50,7 @@ export default function Assignments() {
     }
   }, [formData.year, formData.college]);
 
-  // 🔄 Auto-Generate Class Name (e.g., FYBScCS or FYJC)
+  // Auto-Generate Class Name (e.g., FYBScCS or FYJC)
   useEffect(() => {
     const cleanCourse = formData.course.replace(/[^a-zA-Z]/g, ""); 
     let generatedClass = "";
@@ -64,7 +64,7 @@ export default function Assignments() {
     setFormData((prev) => ({ ...prev, class: generatedClass }));
   }, [formData.year, formData.course, formData.college]);
 
-  // 🔄 Fetch Subjects dynamically based on filters
+  // Fetch Subjects dynamically based on filters
   useEffect(() => {
     const fetchAvailableSubjects = async () => {
       if (!formData.college || !showForm) return;

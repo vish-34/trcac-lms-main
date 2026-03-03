@@ -14,9 +14,12 @@ import StudentLectures from './Pages/StudentDashboard/Lectures.jsx';
 import StudentAssignment from './Pages/StudentDashboard/Assignments.jsx';
 import StudentSubmitAssignment from './Pages/StudentDashboard/SubmitAssignment.jsx';
 import StudentSubjects from './Pages/StudentDashboard/Subjects.jsx';
+import LectureHistory from './Pages/StudentDashboard/LectureHistory.jsx';
+import StudentAttendance from './Pages/StudentDashboard/Attendance.jsx';
 import TeacherDashboard from './Pages/TeacherDashboard/TeacherDashboard.jsx';
 import TeacherHome from './Pages/TeacherDashboard/TeacherHome.jsx';
 import TeacherLectures from './Pages/TeacherDashboard/TeacherLectures.jsx';
+import BulkEnrollment from './Pages/AdminDashboard/BulkEnrollment.jsx';
 import TeacherAssignment from './Pages/TeacherDashboard/Assignments.jsx';
 import TeacherExams from './Pages/TeacherDashboard/TeacherExams.jsx';
 import AllActivity from './Pages/TeacherDashboard/AllActivity.jsx';
@@ -27,7 +30,7 @@ import UserManagement from './Pages/AdminDashboard/UserManagement.jsx';
 import AdminAddLecture from './components/Admindashboard/AdminAddLecture.jsx';
 import AdminSubjects from './Pages/AdminDashboard/AdminSubjects.jsx';
 import AdminAddSubjects from './Pages/AdminDashboard/AdminAddSubjects.jsx';
-// import Exams from './components/Studentdashboard/Exams.jsx';
+import Exams from './components/Studentdashboard/Exams.jsx';
 
 // Navigation Guard Component
 const NavigationGuard = ({ children }) => {
@@ -107,6 +110,16 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
+
+      {/* Bulk Enrollment - Admin Only */}
+      <Route 
+        path="/admindashboard/bulk-enrollment" 
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <BulkEnrollment />
+          </ProtectedRoute>
+        } 
+      />
       
       {/* App Route - redirects based on role */}
       <Route 
@@ -136,7 +149,9 @@ const AppRoutes = () => {
         <Route path="assignment" element={<StudentAssignment />} />
         <Route path="assignment/submit/:assignmentId" element={<StudentSubmitAssignment />} />
         <Route path="subjects" element={<StudentSubjects />} />
-        {/* <Route path="exams" element={<Exams />} /> */}
+        <Route path="exams" element={<Exams />} />
+        <Route path="lecture-history" element={<LectureHistory />} />
+        <Route path="attendance" element={<StudentAttendance />} />
       </Route>
       
       {/* Teacher Dashboard */}

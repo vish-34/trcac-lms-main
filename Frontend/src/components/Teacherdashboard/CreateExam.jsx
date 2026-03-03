@@ -29,7 +29,7 @@ const CreateExam = ({ onExamCreated, onCancel }) => {
 
   const examTypes = ['midterm', 'final', 'quiz', 'practical', 'assignment'];
 
-  // 🔄 Sync Semester with Year (for Degree College)
+  // Sync Semester with Year (for Degree College)
   useEffect(() => {
     if (formData.college === "Degree College") {
       const semMap = { FY: "1", SY: "3", TY: "5" };
@@ -37,7 +37,7 @@ const CreateExam = ({ onExamCreated, onCancel }) => {
     }
   }, [formData.year, formData.college]);
 
-  // 🔄 Auto-Generate Class String (e.g., FYBScCS or FYJC)
+  // Auto-Generate Class String (e.g., FYBScCS or FYJC)
   useEffect(() => {
     const cleanCourse = formData.course.replace(/[^a-zA-Z]/g, ""); // "B.Sc (CS)" -> "BScCS"
     let generatedClass = "";
@@ -51,7 +51,7 @@ const CreateExam = ({ onExamCreated, onCancel }) => {
     setFormData(prev => ({ ...prev, class: generatedClass }));
   }, [formData.year, formData.course, formData.college]);
 
-  // 🔄 Fetch Subjects based on filters
+  // Fetch Subjects based on filters
   useEffect(() => {
     const fetchFilteredSubjects = async () => {
       try {

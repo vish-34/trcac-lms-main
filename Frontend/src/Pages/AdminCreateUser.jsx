@@ -7,7 +7,7 @@ export default function AdminCreateUser() {
   const { user: adminUser, token, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
 
-  // 🔐 Redirect if not authenticated as admin
+  // Redirect if not authenticated as admin
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated || !adminUser || adminUser.role !== "admin") {
@@ -16,7 +16,7 @@ export default function AdminCreateUser() {
     }
   }, [adminUser, isAuthenticated, loading, navigate]);
 
-  // 📝 FORM STATE (Semester Removed)
+  // FORM STATE (Semester Removed)
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -31,7 +31,7 @@ export default function AdminCreateUser() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // 🔄 HANDLE INPUT CHANGE
+  // HANDLE INPUT CHANGE
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,
@@ -39,7 +39,7 @@ export default function AdminCreateUser() {
     }));
   };
 
-  // 🚀 SUBMIT
+  // SUBMIT
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormLoading(true);
