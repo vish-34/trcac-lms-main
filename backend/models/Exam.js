@@ -69,7 +69,14 @@ const examSchema = new mongoose.Schema({
   },
   fileName: {
     type: String
+  },
+  questions: [
+  {
+    question: String,
+    options: [String],
+    correctAnswer: String
   }
+],
 }, {
   timestamps: true
 });

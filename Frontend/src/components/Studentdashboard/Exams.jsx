@@ -11,6 +11,7 @@ export default function Exams() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filteredExams, setFilteredExams] = useState([]);
+  const [attemptedExams, setAttemptedExams] = useState([]);
   const [filters, setFilters] = useState({
     searchTerm: '',
     examType: 'all',
@@ -39,23 +40,23 @@ export default function Exams() {
 
   const applyFilters = () => {
     let filtered = [...exams];
-    
+
     // Search term filter
     if (filters.searchTerm) {
       const searchLower = filters.searchTerm.toLowerCase();
-      filtered = filtered.filter(exam => 
+      filtered = filtered.filter(exam =>
         exam.title.toLowerCase().includes(searchLower) ||
         exam.subject.toLowerCase().includes(searchLower) ||
         exam.teacherName.toLowerCase().includes(searchLower) ||
         exam.instructions?.toLowerCase().includes(searchLower)
       );
     }
-    
+
     // Exam type filter
     if (filters.examType !== 'all') {
       filtered = filtered.filter(exam => exam.examType === filters.examType);
     }
-    
+
     // Status filter
     if (filters.status !== 'all') {
       const now = new Date();
@@ -65,18 +66,18 @@ export default function Exams() {
         filtered = filtered.filter(exam => new Date(exam.examDate) <= now);
       }
     }
-    
+
     // Subject filter
     if (filters.subject !== 'all') {
       filtered = filtered.filter(exam => exam.subject === filters.subject);
     }
-    
+
     // Date range filter
     if (filters.dateRange !== 'all') {
       const now = new Date();
       let startDate;
       let endDate;
-      
+
       switch (filters.dateRange) {
         case 'today':
           startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -95,7 +96,7 @@ export default function Exams() {
           endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
           break;
       }
-      
+
       if (startDate && endDate) {
         filtered = filtered.filter(exam => {
           const examDate = new Date(exam.examDate);
@@ -103,7 +104,7 @@ export default function Exams() {
         });
       }
     }
-    
+
     // Duration filter
     if (filters.duration !== 'all') {
       switch (filters.duration) {
@@ -118,7 +119,7 @@ export default function Exams() {
           break;
       }
     }
-    
+
     // Marks range filter
     if (filters.marksRange !== 'all') {
       switch (filters.marksRange) {
@@ -133,9 +134,18 @@ export default function Exams() {
           break;
       }
     }
-    
+
     setFilteredExams(filtered);
   };
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    axios
+      .get(`${import.meta.env.VITE_API_URL}/api/quiz/attempted/${user.id}`)
+      .then(res => setAttemptedExams(res.data))
+      .catch(() => { });
+  }, [user]);
 
   const getUniqueSubjects = () => {
     const subjects = [...new Set(exams.map(exam => exam.subject))];
@@ -327,7 +337,7 @@ export default function Exams() {
             Reset All
           </button>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {/* Search */}
           <div className="lg:col-span-2">
@@ -336,17 +346,17 @@ export default function Exams() {
               type="text"
               placeholder="Search by title, subject, teacher..."
               value={filters.searchTerm}
-              onChange={(e) => setFilters({...filters, searchTerm: e.target.value})}
+              onChange={(e) => setFilters({ ...filters, searchTerm: e.target.value })}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
-          
+
           {/* Exam Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Exam Type</label>
             <select
               value={filters.examType}
-              onChange={(e) => setFilters({...filters, examType: e.target.value})}
+              onChange={(e) => setFilters({ ...filters, examType: e.target.value })}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="all">All Types</option>
@@ -357,13 +367,13 @@ export default function Exams() {
               <option value="assignment">Assignment</option>
             </select>
           </div>
-          
+
           {/* Status */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
             <select
               value={filters.status}
-              onChange={(e) => setFilters({...filters, status: e.target.value})}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="all">All Status</option>
@@ -371,13 +381,13 @@ export default function Exams() {
               <option value="completed">Completed</option>
             </select>
           </div>
-          
+
           {/* Subject */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
             <select
               value={filters.subject}
-              onChange={(e) => setFilters({...filters, subject: e.target.value})}
+              onChange={(e) => setFilters({ ...filters, subject: e.target.value })}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="all">All Subjects</option>
@@ -386,13 +396,13 @@ export default function Exams() {
               ))}
             </select>
           </div>
-          
+
           {/* Date Range */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
             <select
               value={filters.dateRange}
-              onChange={(e) => setFilters({...filters, dateRange: e.target.value})}
+              onChange={(e) => setFilters({ ...filters, dateRange: e.target.value })}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="all">All Time</option>
@@ -402,13 +412,13 @@ export default function Exams() {
               <option value="next30">Next 30 Days</option>
             </select>
           </div>
-          
+
           {/* Duration */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Duration</label>
             <select
               value={filters.duration}
-              onChange={(e) => setFilters({...filters, duration: e.target.value})}
+              onChange={(e) => setFilters({ ...filters, duration: e.target.value })}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="all">All Durations</option>
@@ -417,13 +427,13 @@ export default function Exams() {
               <option value="long">Long (&gt; 2 hours)</option>
             </select>
           </div>
-          
+
           {/* Marks Range */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Total Marks</label>
             <select
               value={filters.marksRange}
-              onChange={(e) => setFilters({...filters, marksRange: e.target.value})}
+              onChange={(e) => setFilters({ ...filters, marksRange: e.target.value })}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="all">All Marks</option>
@@ -433,14 +443,14 @@ export default function Exams() {
             </select>
           </div>
         </div>
-        
+
         {/* Active Filters Display */}
         <div className="mt-4 flex flex-wrap gap-2">
           {filters.searchTerm && (
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
               Search: {filters.searchTerm}
               <button
-                onClick={() => setFilters({...filters, searchTerm: ''})}
+                onClick={() => setFilters({ ...filters, searchTerm: '' })}
                 className="ml-2 text-indigo-600 hover:text-indigo-800"
               >
                 ×
@@ -451,7 +461,7 @@ export default function Exams() {
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
               Type: {filters.examType}
               <button
-                onClick={() => setFilters({...filters, examType: 'all'})}
+                onClick={() => setFilters({ ...filters, examType: 'all' })}
                 className="ml-2 text-indigo-600 hover:text-indigo-800"
               >
                 ×
@@ -462,7 +472,7 @@ export default function Exams() {
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
               Status: {filters.status}
               <button
-                onClick={() => setFilters({...filters, status: 'all'})}
+                onClick={() => setFilters({ ...filters, status: 'all' })}
                 className="ml-2 text-indigo-600 hover:text-indigo-800"
               >
                 ×
@@ -473,7 +483,7 @@ export default function Exams() {
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
               Subject: {filters.subject}
               <button
-                onClick={() => setFilters({...filters, subject: 'all'})}
+                onClick={() => setFilters({ ...filters, subject: 'all' })}
                 className="ml-2 text-indigo-600 hover:text-indigo-800"
               >
                 ×
@@ -484,7 +494,7 @@ export default function Exams() {
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
               Date: {filters.dateRange}
               <button
-                onClick={() => setFilters({...filters, dateRange: 'all'})}
+                onClick={() => setFilters({ ...filters, dateRange: 'all' })}
                 className="ml-2 text-indigo-600 hover:text-indigo-800"
               >
                 ×
@@ -495,7 +505,7 @@ export default function Exams() {
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
               Duration: {filters.duration}
               <button
-                onClick={() => setFilters({...filters, duration: 'all'})}
+                onClick={() => setFilters({ ...filters, duration: 'all' })}
                 className="ml-2 text-indigo-600 hover:text-indigo-800"
               >
                 ×
@@ -506,7 +516,7 @@ export default function Exams() {
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
               Marks: {filters.marksRange}
               <button
-                onClick={() => setFilters({...filters, marksRange: 'all'})}
+                onClick={() => setFilters({ ...filters, marksRange: 'all' })}
                 className="ml-2 text-indigo-600 hover:text-indigo-800"
               >
                 ×
@@ -514,7 +524,7 @@ export default function Exams() {
             </span>
           )}
         </div>
-        
+
         {/* Results Count */}
         <div className="mt-4 text-sm text-gray-600">
           Showing {filteredExams.length} of {exams.length} exams
@@ -562,8 +572,8 @@ export default function Exams() {
 
             <p className="text-sm text-gray-500 mt-1">
 
-              {exams.length === 0 
-                ? 'Your teacher hasn\'t scheduled exams yet.' 
+              {exams.length === 0
+                ? 'Your teacher hasn\'t scheduled exams yet.'
                 : 'Try adjusting your filters to see more results.'
               }
 
@@ -698,35 +708,34 @@ export default function Exams() {
                       {/* VIEW */}
 
                       <td className="pr-4">
-
-                        {exam.fileUrl ? (
-
+                        {exam.examType === "quiz" ? (
+                          attemptedExams.includes(exam._id) ? (
+                            <button
+                              disabled
+                              className="bg-red-500 text-white px-3 py-1 rounded text-xs font-medium cursor-not-allowed"
+                            >
+                              Already Attempted
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => window.location.href = `/student/quiz/${exam._id}`}
+                              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-medium"
+                            >
+                              Attempt Quiz
+                            </button>
+                          )
+                        ) : exam.fileUrl ? (
                           <a
-
                             href={`${import.meta.env.VITE_API_URL}${exam.fileUrl}`}
-
                             target="_blank"
-
                             rel="noopener noreferrer"
-
                             className="text-indigo-600 hover:text-indigo-800 font-medium"
-
                           >
-
                             View Paper
-
                           </a>
-
                         ) : (
-
-                          <span className="text-gray-400 text-xs">
-
-                            No File
-
-                          </span>
-
+                          <span className="text-gray-400 text-xs">No File</span>
                         )}
-
                       </td>
 
                     </tr>

@@ -26,8 +26,34 @@ const CreateExam = ({ onExamCreated, onCancel }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const [quizFile, setQuizFile] = useState(null);
+
+  const downloadCSVTemplate = () => {
+    const csvContent =
+      `question,optionA,optionB,optionC,optionD,correctAnswer
+What is JVM?,Java Virtual Machine,JavaScript VM,Compiler,Interpreter,A
+React is?,Library,Framework,Language,Database,A`;
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "quiz_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleQuizCSVUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setQuizFile(file);
+    }
+  };
 
   const examTypes = ['midterm', 'final', 'quiz', 'practical', 'assignment'];
+
 
   // Sync Semester with Year (for Degree College)
   useEffect(() => {
@@ -107,28 +133,48 @@ const CreateExam = ({ onExamCreated, onCancel }) => {
     setError('');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      setUploading(true);
-      const data = new FormData();
-      Object.entries(formData).forEach(([key, value]) => data.append(key, value));
-      data.append("teacherId", user?.id);
-      data.append("teacherName", user?.fullName || user?.email);
-      if (file) data.append("examFile", file);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/exams/create`, data, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
+  try {
+    setUploading(true);
 
-      handleReset();
-      onExamCreated && onExamCreated();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create exam');
-    } finally {
-      setUploading(false);
+    // ✅ Create FormData FIRST
+    const data = new FormData();
+
+    // ✅ Append all form fields
+    Object.entries(formData).forEach(([key, value]) => {
+      data.append(key, value);
+    });
+
+    // ✅ Teacher info
+    data.append("teacherId", user?.id);
+    data.append("teacherName", user?.fullName || user?.email);
+
+    // ✅ Normal exam paper
+    if (file) data.append("examFile", file);
+
+    // ✅ QUIZ CSV (⭐ THIS WAS MISSING IN RIGHT PLACE)
+    if (formData.examType === "quiz" && quizFile) {
+      data.append("quizCSV", quizFile);
     }
-  };
+
+    // ✅ Send to backend
+    await axios.post(
+      `${import.meta.env.VITE_API_URL}/api/exams/create`,
+      data,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+
+    handleReset();
+    onExamCreated && onExamCreated();
+
+  } catch (err) {
+    setError(err.response?.data?.message || 'Failed to create exam');
+  } finally {
+    setUploading(false);
+  }
+};
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 max-w-6xl mx-auto border border-gray-100">
@@ -161,12 +207,12 @@ const CreateExam = ({ onExamCreated, onCancel }) => {
               <><option value="Commerce">Commerce</option><option value="Arts">Arts</option></>
             ) : (
               <><option value="B.Sc (CS)">B.Sc (CS)</option>
-                      <option value="B.Sc (IT)">B.Sc (IT)</option>
-                      <option value="BA">BA</option>
-                      <option value="BAMMC">BAMMC</option>
-                      <option value="BCom">BCom</option>
-                      <option value="BMS">BMS</option>
-                      <option value="BAF">BAF</option></>
+                <option value="B.Sc (IT)">B.Sc (IT)</option>
+                <option value="BA">BA</option>
+                <option value="BAMMC">BAMMC</option>
+                <option value="BCom">BCom</option>
+                <option value="BMS">BMS</option>
+                <option value="BAF">BAF</option></>
             )}
           </SelectField>
 
@@ -203,6 +249,32 @@ const CreateExam = ({ onExamCreated, onCancel }) => {
             <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
           ))}
         </SelectField>
+
+        {formData.examType === "quiz" && (
+          <div className="bg-indigo-50 border rounded-lg p-4 space-y-3">
+            <h4 className="font-semibold text-indigo-700">Quiz Setup</h4>
+
+            <button
+              type="button"
+              onClick={downloadCSVTemplate}
+              className="px-4 py-2 bg-green-600 text-white rounded"
+            >
+              Download CSV Template
+            </button>
+
+            <label className="block">
+              <span className="text-sm">Upload Filled CSV</span>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleQuizCSVUpload}
+                className="block mt-1"
+              />
+            </label>
+
+            {quizFile && <p className="text-sm text-indigo-600">{quizFile.name}</p>}
+          </div>
+        )}
 
         <TextareaField label="Instructions" name="instructions" value={formData.instructions} onChange={handleInputChange} placeholder="e.g. Use of calculator is allowed..." />
 

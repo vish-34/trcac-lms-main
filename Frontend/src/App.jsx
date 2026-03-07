@@ -31,6 +31,8 @@ import AdminAddLecture from './components/Admindashboard/AdminAddLecture.jsx';
 import AdminSubjects from './Pages/AdminDashboard/AdminSubjects.jsx';
 import AdminAddSubjects from './Pages/AdminDashboard/AdminAddSubjects.jsx';
 import Exams from './components/Studentdashboard/Exams.jsx';
+import QuizAttempt from './components/Studentdashboard/QuizAttempt.jsx';
+import QuizResults from './components/Teacherdashboard/QuizResults.jsx';
 
 // Navigation Guard Component
 const NavigationGuard = ({ children }) => {
@@ -153,6 +155,8 @@ const AppRoutes = () => {
         <Route path="lecture-history" element={<LectureHistory />} />
         <Route path="attendance" element={<StudentAttendance />} />
       </Route>
+
+      <Route path="/student/quiz/:examId" element={<QuizAttempt />} />
       
       {/* Teacher Dashboard */}
       <Route 
@@ -169,6 +173,10 @@ const AppRoutes = () => {
         <Route path="exams" element={<TeacherExams />} />
         <Route path="activity" element={<AllActivity />} />
       </Route>
+      <Route
+  path="/teacher/quiz-results/:examId"
+  element={<QuizResults />}
+/>
       
       {/* Admin Dashboard */}
       <Route 

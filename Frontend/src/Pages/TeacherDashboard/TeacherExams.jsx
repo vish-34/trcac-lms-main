@@ -557,6 +557,15 @@ export default function TeacherExams() {
                             </a>
                           )}
 
+                          {exam.examType === "quiz" && (
+  <button
+    onClick={() => window.location.href = `/teacher/quiz-results/${exam._id}`}
+    className="text-green-600 hover:text-green-800 font-medium"
+  >
+    Results
+  </button>
+)}
+
                           <button
                             onClick={() => handleDeleteExam(exam._id)}
                             className="text-red-600 hover:text-red-800 font-medium"

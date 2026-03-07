@@ -3,6 +3,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import Exam from "../models/Exam.js";
+import csv from "csv-parser";
 
 const router = express.Router();
 
@@ -10,24 +11,32 @@ const router = express.Router();
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(process.cwd(), "uploads", "exams");
-    
+
     // Create directory if it doesn't exist
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
-    
+
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     // Create unique filename with timestamp
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
-  }
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname),
+    );
+  },
 });
 
 const fileFilter = (req, file, cb) => {
   // Allow PDF files and images
-  if (file.mimetype === "application/pdf" || file.mimetype.startsWith("image/")) {
+  if (
+    file.mimetype === "application/pdf" ||
+    file.mimetype.startsWith("image/") ||
+    file.mimetype === "text/csv" ||
+    file.originalname.endsWith(".csv")
+  ) {
     cb(null, true);
   } else {
     cb(new Error("Only PDF and image files are allowed"), false);
@@ -39,79 +48,129 @@ const upload = multer({
   fileFilter,
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit
-  }
+  },
 });
 
 // ======================
 // CREATE EXAM (TEACHER)
 // ======================
-router.post("/create", upload.single("examFile"), async (req, res) => {
-  try {
-    const {
-      title,
-      description,
-      subject,
-      teacherId,
-      teacherName,
-      examDate,
-      duration,
-      totalMarks,
-      class: className,
-      college,
-      instructions,
-      examType
-    } = req.body;
+router.post(
+  "/create",
+  upload.fields([
+    { name: "examFile", maxCount: 1 },
+    { name: "quizCSV", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    const examFile = req.files?.examFile?.[0];
+    const quizCSV = req.files?.quizCSV?.[0];
+    try {
+      const {
+        title,
+        description,
+        subject,
+        teacherId,
+        teacherName,
+        examDate,
+        duration,
+        totalMarks,
+        class: className,
+        college,
+        instructions,
+        examType,
+      } = req.body;
 
-    // Validation
-    if (!title || !subject || !teacherId || !teacherName || !examDate || !duration || !totalMarks || !className || !college || !examType) {
-      return res.status(400).json({ message: "All required fields must be provided" });
-    }
-
-    // Parse exam date
-    const examDateTime = new Date(examDate);
-    if (isNaN(examDateTime.getTime())) {
-      return res.status(400).json({ message: "Invalid exam date format" });
-    }
-
-    // Create exam
-    const exam = new Exam({
-      title: title.trim(),
-      description: description?.trim() || "",
-      subject: subject.trim(),
-      teacherId,
-      teacherName: teacherName.trim(),
-      examDate: examDateTime,
-      duration: parseInt(duration),
-      totalMarks: parseInt(totalMarks),
-      class: className.trim(),
-      college,
-      instructions: instructions?.trim() || "",
-      examType,
-      fileUrl: req.file ? `/uploads/exams/${req.file.filename}` : undefined,
-      fileName: req.file ? req.file.originalname : undefined
-    });
-
-    await exam.save();
-
-    res.status(201).json({
-      message: "Exam created successfully",
-      exam
-    });
-
-  } catch (error) {
-    console.error("Error creating exam:", error);
-    
-    // Clean up uploaded file if there's an error
-    if (req.file) {
-      const filePath = path.join(process.cwd(), req.file.path);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      // Validation
+      if (
+        !title ||
+        !subject ||
+        !teacherId ||
+        !teacherName ||
+        !examDate ||
+        !duration ||
+        !totalMarks ||
+        !className ||
+        !college ||
+        !examType
+      ) {
+        return res
+          .status(400)
+          .json({ message: "All required fields must be provided" });
       }
+
+      // Parse exam date
+      const examDateTime = new Date(examDate);
+      if (isNaN(examDateTime.getTime())) {
+        return res.status(400).json({ message: "Invalid exam date format" });
+      }
+
+      // Create exam
+      const exam = new Exam({
+        title: title.trim(),
+        description: description?.trim() || "",
+        subject: subject.trim(),
+        teacherId,
+        teacherName: teacherName.trim(),
+        examDate: examDateTime,
+        duration: parseInt(duration),
+        totalMarks: parseInt(totalMarks),
+        class: className.trim(),
+        college,
+        instructions: instructions?.trim() || "",
+        examType,
+
+        fileUrl: examFile ? `/uploads/exams/${examFile.filename}` : undefined,
+        fileName: examFile ? examFile.originalname : undefined,
+      });
+
+      // ================= QUIZ CSV PARSING =================
+if (examType === "quiz" && quizCSV) {
+  const quizFilePath = quizCSV.path;
+  const questions = [];
+
+  await new Promise((resolve, reject) => {
+    fs.createReadStream(quizFilePath)
+      .pipe(csv())
+      .on("data", (row) => {
+        questions.push({
+          question: row.question,
+          options: [
+            row.optionA,
+            row.optionB,
+            row.optionC,
+            row.optionD,
+          ],
+          correctAnswer: row.correctAnswer,
+        });
+      })
+      .on("end", resolve)
+      .on("error", reject);
+  });
+
+  exam.questions = questions;
+}
+
+      await exam.save();
+
+      res.status(201).json({
+        message: "Exam created successfully",
+        exam,
+      });
+    } catch (error) {
+      console.error("Error creating exam:", error);
+
+      // Clean up uploaded file if there's an error
+      if (req.file) {
+        const filePath = path.join(process.cwd(), req.file.path);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+
+      res.status(500).json({ message: "Failed to create exam" });
     }
-    
-    res.status(500).json({ message: "Failed to create exam" });
-  }
-});
+  },
+);
+
 
 
 // ======================
@@ -120,32 +179,33 @@ router.post("/create", upload.single("examFile"), async (req, res) => {
 router.get("/student/:studentId", async (req, res) => {
   try {
     const { studentId } = req.params;
-    
+
     // Get student information to filter by their class and college
     const DCStudent = (await import("../models/DCStudent.js")).default;
     const JCStudent = (await import("../models/JCStudent.js")).default;
-    
+
     let student = await DCStudent.findById(studentId);
     if (!student) {
       student = await JCStudent.findById(studentId);
     }
-    
+
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
-    
+
     // Find exams for this student's class and college
     const exams = await Exam.find({
       college: student.college,
       class: student.class,
-      isActive: true
-    }).sort({ examDate: 1 }).lean();
-    
+      isActive: true,
+    })
+      .sort({ examDate: 1 })
+      .lean();
+
     res.json({
       exams,
-      total: exams.length
+      total: exams.length,
     });
-    
   } catch (error) {
     console.error("Error fetching student exams:", error);
     res.status(500).json({ message: "Failed to fetch exams" });
@@ -164,18 +224,14 @@ router.get("/teacher/:teacherId", async (req, res) => {
       query.examDate = { $gte: new Date() };
     }
 
-    const exams = await Exam.find(query)
-      .sort({ examDate: 1 })
-      .lean();
+    const exams = await Exam.find(query).sort({ examDate: 1 }).lean();
 
     res.json({ exams });
-
   } catch (error) {
     console.error("Error fetching teacher exams:", error);
     res.status(500).json({ message: "Failed to fetch exams" });
   }
 });
-
 
 // ======================
 // GET UPCOMING EXAMS FOR TEACHER
@@ -189,14 +245,13 @@ router.get("/upcoming/:teacherId", async (req, res) => {
     const exams = await Exam.find({
       teacherId,
       isActive: true,
-      examDate: { $gt: now }
+      examDate: { $gt: now },
     })
-    .sort({ examDate: 1 })
-    .limit(parseInt(limit))
-    .lean();
+      .sort({ examDate: 1 })
+      .limit(parseInt(limit))
+      .lean();
 
     res.json({ exams });
-
   } catch (error) {
     console.error("Error fetching upcoming exams:", error);
     res.status(500).json({ message: "Failed to fetch upcoming exams" });
@@ -212,43 +267,44 @@ router.get("/pending-reviews/:teacherId", async (req, res) => {
 
     // Get assignments with submitted but not reviewed submissions
     const Assignment = (await import("../models/Assignment.js")).default;
-    
+
     const assignments = await Assignment.find({
       teacherId,
       isActive: true,
       status: { $ne: "graded" }, // Exclude graded assignments
-      "submissions.status": "submitted"
+      "submissions.status": "submitted",
     })
-    .sort({ deadline: -1 })
-    .lean();
+      .sort({ deadline: -1 })
+      .lean();
 
     // Process assignments to get pending review count
-    const pendingReviews = assignments.map(assignment => {
-      const pendingSubmissions = assignment.submissions.filter(
-        sub => sub.status === "submitted"
-      );
-      
-      return {
-        assignmentId: assignment._id,
-        title: assignment.title,
-        subject: assignment.subject,
-        class: assignment.class,
-        college: assignment.college,
-        deadline: assignment.deadline,
-        pendingCount: pendingSubmissions.length,
-        pendingSubmissions: pendingSubmissions.map(sub => ({
-          studentId: sub.studentId,
-          studentName: sub.studentName,
-          studentEmail: sub.studentEmail,
-          submittedAt: sub.submittedAt,
-          fileUrl: sub.fileUrl,
-          fileName: sub.fileName
-        }))
-      };
-    }).filter(assignment => assignment.pendingCount > 0);
+    const pendingReviews = assignments
+      .map((assignment) => {
+        const pendingSubmissions = assignment.submissions.filter(
+          (sub) => sub.status === "submitted",
+        );
+
+        return {
+          assignmentId: assignment._id,
+          title: assignment.title,
+          subject: assignment.subject,
+          class: assignment.class,
+          college: assignment.college,
+          deadline: assignment.deadline,
+          pendingCount: pendingSubmissions.length,
+          pendingSubmissions: pendingSubmissions.map((sub) => ({
+            studentId: sub.studentId,
+            studentName: sub.studentName,
+            studentEmail: sub.studentEmail,
+            submittedAt: sub.submittedAt,
+            fileUrl: sub.fileUrl,
+            fileName: sub.fileName,
+          })),
+        };
+      })
+      .filter((assignment) => assignment.pendingCount > 0);
 
     res.json({ pendingReviews });
-
   } catch (error) {
     console.error("Error fetching pending reviews:", error);
     res.status(500).json({ message: "Failed to fetch pending reviews" });
@@ -262,51 +318,61 @@ router.patch("/submission/:assignmentId/:studentId", async (req, res) => {
   try {
     const { assignmentId, studentId } = req.params;
     const { grade, feedback } = req.body;
-    
-    console.log('Mark submission as reviewed:', { assignmentId, studentId, grade, feedback });
-    
+
+    console.log("Mark submission as reviewed:", {
+      assignmentId,
+      studentId,
+      grade,
+      feedback,
+    });
+
     const Assignment = (await import("../models/Assignment.js")).default;
-    
+
     const assignment = await Assignment.findById(assignmentId);
-    
+
     if (!assignment) {
-      console.log('Assignment not found:', assignmentId);
+      console.log("Assignment not found:", assignmentId);
       return res.status(404).json({ message: "Assignment not found" });
     }
-    
+
     // Find and update the specific submission
     const submission = assignment.submissions.find(
-      sub => sub.studentId.toString() === studentId.toString()
+      (sub) => sub.studentId.toString() === studentId.toString(),
     );
-    
+
     if (!submission) {
-      console.log('Submission not found:', studentId);
-      console.log('Available submissions:', assignment.submissions.map(s => ({ studentId: s.studentId, studentName: s.studentName })));
+      console.log("Submission not found:", studentId);
+      console.log(
+        "Available submissions:",
+        assignment.submissions.map((s) => ({
+          studentId: s.studentId,
+          studentName: s.studentName,
+        })),
+      );
       return res.status(404).json({ message: "Submission not found" });
     }
-    
+
     // Update submission status
     submission.status = "graded";
     if (grade) submission.grade = grade;
     if (feedback) submission.feedback = feedback;
     submission.reviewedAt = new Date();
-    
-    console.log('Updated submission:', submission);
-    
+
+    console.log("Updated submission:", submission);
+
     await assignment.save();
-    
-    console.log('Assignment saved successfully');
-    
+
+    console.log("Assignment saved successfully");
+
     res.json({
       message: "Submission marked as reviewed successfully",
-      submission
+      submission,
     });
-    
   } catch (error) {
     console.error("Error marking submission as reviewed:", error);
-    res.status(500).json({ 
-      message: "Failed to mark submission as reviewed", 
-      error: error.message 
+    res.status(500).json({
+      message: "Failed to mark submission as reviewed",
+      error: error.message,
     });
   }
 });
@@ -325,11 +391,11 @@ router.put("/:examId", upload.single("examFile"), async (req, res) => {
       duration,
       totalMarks,
       instructions,
-      examType
+      examType,
     } = req.body;
 
     const exam = await Exam.findById(examId);
-    
+
     if (!exam) {
       return res.status(404).json({ message: "Exam not found" });
     }
@@ -353,7 +419,7 @@ router.put("/:examId", upload.single("examFile"), async (req, res) => {
           fs.unlinkSync(oldFilePath);
         }
       }
-      
+
       exam.fileUrl = `/uploads/exams/${req.file.filename}`;
       exam.fileName = req.file.originalname;
     }
@@ -362,9 +428,8 @@ router.put("/:examId", upload.single("examFile"), async (req, res) => {
 
     res.json({
       message: "Exam updated successfully",
-      exam
+      exam,
     });
-
   } catch (error) {
     console.error("Error updating exam:", error);
     res.status(500).json({ message: "Failed to update exam" });
@@ -379,7 +444,7 @@ router.delete("/:examId", async (req, res) => {
     const { examId } = req.params;
 
     const exam = await Exam.findById(examId);
-    
+
     if (!exam) {
       return res.status(404).json({ message: "Exam not found" });
     }
@@ -397,7 +462,6 @@ router.delete("/:examId", async (req, res) => {
     await exam.save();
 
     res.json({ message: "Exam deleted successfully" });
-
   } catch (error) {
     console.error("Error deleting exam:", error);
     res.status(500).json({ message: "Failed to delete exam" });
