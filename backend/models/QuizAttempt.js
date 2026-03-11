@@ -1,52 +1,58 @@
 import mongoose from "mongoose";
 
 const QuizAttemptSchema = new mongoose.Schema({
- studentId: {
-  type: mongoose.Schema.Types.ObjectId,
-  refPath: "studentModel"
-},
-studentModel: {
-  type: String,
-  enum: ["DCStudent", "JCStudent"]
-},
+  studentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    refPath: "studentModel",
+  },
+  studentModel: {
+    type: String,
+    enum: ["DCStudent", "JCStudent"],
+  },
 
   examId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Exam",
-    required: true
+    required: true,
   },
-
-  answers: [
+  assignedQuestions: [
     {
-      questionIndex: Number,
-      selectedOption: String
-    }
+      questionId: mongoose.Schema.Types.ObjectId,
+      question: String,
+      options: [String],
+      correctAnswer: String,
+    },
   ],
+ answers: [
+  {
+    questionIndex: Number,
+    questionId: mongoose.Schema.Types.ObjectId,
+    selectedOption: String
+  }
+],
 
-  score: {
-    type: Number,
-    required: true
-  },
+ score: { type: Number, default: 0 },
+totalQuestions: { type: Number },
 
   totalQuestions: {
     type: Number,
-    required: true
+    required: true,
   },
 
   percentage: {
-    type: Number
+    type: Number,
   },
 
   status: {
     type: String,
     enum: ["completed", "timeout", "submitted"],
-    default: "submitted"
+    default: "submitted",
   },
 
   submittedAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
 // 🚫 Prevent retakes (one attempt per student per quiz)

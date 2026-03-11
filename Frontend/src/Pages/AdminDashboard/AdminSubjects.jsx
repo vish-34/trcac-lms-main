@@ -18,6 +18,7 @@ export default function AdminSubjects() {
 
     const [subjects, setSubjects] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [verticals, setVerticals] = useState([1, 2, 3, 4, 5, 6]);
 
     const addsubject = () => {
         navigate("/admindashboard/addsubjects");
@@ -71,6 +72,14 @@ export default function AdminSubjects() {
         fetchSubjects();
     }, [mode, degreeYear, semester, course, jcYear, stream]);
 
+    // Group subjects by vertical
+    const groupedSubjects = subjects.reduce((acc, subject) => {
+        const v = Number(subject.vertical);
+        if (!acc[v]) acc[v] = [];
+        acc[v].push(subject);
+        return acc;
+    }, {});
+
     return (
         <div className="min-h-screen bg-gray-50 px-4 sm:px-6 py-10">
 
@@ -87,8 +96,8 @@ export default function AdminSubjects() {
                             key={tab}
                             onClick={() => setMode(tab)}
                             className={`px-6 py-2 rounded-full capitalize transition ${mode === tab
-                                    ? "bg-white shadow font-medium"
-                                    : "text-gray-500"
+                                ? "bg-white shadow font-medium"
+                                : "text-gray-500"
                                 }`}
                         >
                             {tab === "degree" ? "Degree College" : "Junior College"}
@@ -173,22 +182,40 @@ export default function AdminSubjects() {
                                 </button>
                             </div>
 
-                            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                {loading ? (
-                                    <p>Loading...</p>
-                                ) : subjects.length === 0 ? (
-                                    <p className="text-gray-500">No Subjects Found</p>
-                                ) : (
-                                    subjects.map(sub => (
-                                        <div
-                                            key={sub._id}
-                                            className="border rounded-xl p-4 hover:shadow"
-                                        >
-                                            {sub.subjectName}
-                                        </div>
-                                    ))
-                                )}
+                           {loading ? (
+    <p>Loading...</p>
+) : subjects.length === 0 ? (
+    <p className="text-gray-500">No Subjects Found</p>
+) : (
+    <div className="space-y-6">
+
+        {Object.keys(groupedSubjects)
+            .sort((a, b) => a - b)   // sort verticals numerically
+            .map(v => (
+                <div key={v} className="border rounded-xl p-4">
+
+                    {/* Vertical Title */}
+                    <h3 className="font-semibold text-lg mb-3 text-indigo-700">
+                        Vertical {v}
+                    </h3>
+
+                    {/* Subjects under vertical */}
+                    <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {groupedSubjects[v].map(sub => (
+                            <div
+                                key={sub._id}
+                                className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 hover:shadow"
+                            >
+                                {sub.subjectName}
                             </div>
+                        ))}
+                    </div>
+
+                </div>
+            ))}
+
+    </div>
+)}
 
                         </div>
                     )}

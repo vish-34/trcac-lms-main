@@ -6,8 +6,14 @@ import Subject from "../models/Subject.js";
 
 export const addSubject = async (req, res) => {
   try {
-    const { collegeType, year, semester, courseOrStream, subjectName } =
-      req.body;
+    const {
+      collegeType,
+      year,
+      semester,
+      courseOrStream,
+      subjectName,
+      vertical   // ✅ NEW
+    } = req.body;
 
     // VALIDATION
 
@@ -18,12 +24,12 @@ export const addSubject = async (req, res) => {
       });
     }
 
-    // Degree needs semester
+    // Degree needs semester + vertical
 
-    if (collegeType === "degree" && !semester) {
+    if (collegeType === "degree" && (!semester || !vertical)) {
       return res.status(400).json({
         success: false,
-        message: "Semester required for Degree College",
+        message: "Semester and Vertical required for Degree College",
       });
     }
 
@@ -35,12 +41,13 @@ export const addSubject = async (req, res) => {
       semester: collegeType === "degree" ? semester : null,
       courseOrStream,
       subjectName,
+      vertical: collegeType === "degree" ? vertical : null,  // ✅ NEW
     });
 
     if (existingSubject) {
       return res.status(400).json({
         success: false,
-        message: "Subject already exists",
+        message: "Subject already exists in this Vertical",
       });
     }
 
@@ -50,9 +57,9 @@ export const addSubject = async (req, res) => {
       collegeType,
       year,
       semester: collegeType === "degree" ? semester : null,
-
       courseOrStream,
       subjectName,
+      vertical: collegeType === "degree" ? vertical : null,  // ✅ NEW
     });
 
     res.status(201).json({
@@ -76,7 +83,14 @@ export const addSubject = async (req, res) => {
 
 export const getSubjects = async (req, res) => {
   try {
-    const { collegeType, year, semester, courseOrStream } = req.query;
+    const { collegeType, year, semester, courseOrStream, vertical } = req.query;
+
+    if (!collegeType || !year || !courseOrStream) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required filters",
+      });
+    }
 
     let query = {
       collegeType,
@@ -84,23 +98,31 @@ export const getSubjects = async (req, res) => {
       courseOrStream,
     };
 
-    // Degree also filters semester
-
     if (collegeType === "degree") {
+      if (!semester) {
+        return res.status(400).json({
+          success: false,
+          message: "Semester required for Degree",
+        });
+      }
+
       query.semester = semester;
+
+      // Optional vertical filter
+      if (vertical) {
+        query.vertical = Number(vertical);
+      }
     }
 
-    const subjects = await Subject.find(query)
-
-      .sort({ createdAt: -1 });
+    const subjects = await Subject.find(query).sort({ vertical: 1 });
 
     res.json({
       success: true,
       subjects,
     });
+
   } catch (error) {
     console.log("Get Subjects Error:", error);
-
     res.status(500).json({
       success: false,
       message: "Server Error",

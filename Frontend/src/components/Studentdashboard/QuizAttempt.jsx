@@ -8,15 +8,17 @@ export default function QuizAttempt() {
   const { user } = useAuth();
   const [quiz, setQuiz] = useState({ questions: [] });
   const [answers, setAnswers] = useState([]);
+  const [submitting, setSubmitting] = useState(false); // ⭐ NEW
 
   useEffect(() => {
+    if (!user?.id) return; // ⭐ safety
     axios
-      .get(`${import.meta.env.VITE_API_URL}/api/quiz/${examId}`)
+      .get(`${import.meta.env.VITE_API_URL}/api/quiz/${examId}/${user.id}`)
       .then((res) => {
         setQuiz(res.data);
         setAnswers(new Array(res.data?.questions?.length || 0).fill(null));
       });
-  }, [examId]);
+  }, [examId, user?.id]);
 
   const handleSelect = (qIndex, option) => {
     const updated = [...answers];
@@ -25,6 +27,16 @@ export default function QuizAttempt() {
   };
 
   const handleSubmit = async () => {
+    // ⭐ Prevent incomplete submission
+    if (answers.includes(null)) {
+      alert("Please answer all questions before submitting.");
+      return;
+    }
+
+    // ⭐ Prevent double submit
+    if (submitting) return;
+    setSubmitting(true);
+
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/quiz/submit`,
@@ -32,7 +44,6 @@ export default function QuizAttempt() {
           examId,
           answers,
           studentId: user.id,
-          // ⭐ CRITICAL FIX
           studentModel:
             user.college === "Degree College" ? "DCStudent" : "JCStudent",
         }
@@ -43,6 +54,8 @@ export default function QuizAttempt() {
     } catch (err) {
       console.error("Submit Error:", err.response?.data || err.message);
       alert(err.response?.data?.message || "Submission failed");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -72,10 +85,14 @@ export default function QuizAttempt() {
 
               <div className="space-y-3">
                 {q.options.map((opt, j) => (
-                  <label key={j} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                  <label
+                    key={j}
+                    className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                  >
                     <input
                       type="radio"
                       name={`q-${i}`}
+                      checked={answers[i] === opt} // ⭐ NEW
                       onChange={() => handleSelect(i, opt)}
                       className="accent-indigo-600"
                     />
@@ -90,9 +107,10 @@ export default function QuizAttempt() {
         <div className="mt-10 flex justify-end">
           <button
             onClick={handleSubmit}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg font-semibold"
+            disabled={submitting} // ⭐ NEW
+            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-8 py-3 rounded-lg font-semibold"
           >
-            Submit Quiz
+            {submitting ? "Submitting..." : "Submit Quiz"}
           </button>
         </div>
       </div>

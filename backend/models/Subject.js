@@ -13,9 +13,23 @@ const subjectSchema = new mongoose.Schema(
       required: true,
     },
 
+    semester: {
+      type: String,
+      required: true,
+    },
+
     courseOrStream: {
       type: String,
       required: true,
+    },
+
+    vertical: {                     // ✅ NEW FIELD
+      type: Number,
+      required: function () {
+        return this.collegeType === "degree"; 
+      },
+      min: 1,
+      max: 6,
     },
 
     subjectName: {
@@ -23,12 +37,8 @@ const subjectSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    semester: {
-      type: String,
-      required: true,
-    },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 /*
@@ -38,7 +48,14 @@ const subjectSchema = new mongoose.Schema(
 */
 
 subjectSchema.index(
-  { collegeType: 1, year: 1, semester: 1, courseOrStream: 1, subjectName: 1 },
+  {
+    collegeType: 1,
+    year: 1,
+    semester: 1,
+    courseOrStream: 1,
+    vertical: 1,      // ✅ added
+    subjectName: 1
+  },
   { unique: true }
 );
 

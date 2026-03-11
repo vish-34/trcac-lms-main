@@ -97,6 +97,13 @@ export default function SubjectSlider() {
     "from-indigo-500 to-violet-500"
   ];
 
+  const groupedSubjects = subjects.reduce((acc, subject) => {
+  const v = Number(subject.vertical);
+  if (!acc[v]) acc[v] = [];
+  acc[v].push(subject);
+  return acc;
+}, {});
+
   return (
     <div className="py-10 px-4 max-w-6xl mx-auto">
 
@@ -130,60 +137,80 @@ export default function SubjectSlider() {
       )}
 
       {/* SUBJECT GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {subjects.length === 0 ? (
+  <p className="text-gray-500">No Subjects Available</p>
+) : (
+  <div className="space-y-12">
 
-        {subjects.length === 0 ? (
-          <p className="text-gray-500">
-            No Subjects Available
-          </p>
-        ) : (
-          subjects.map((sub, index) => (
-            <motion.div
-              key={sub._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -10 }}
-              className="group relative bg-white border border-slate-100 p-8 rounded-3xl shadow-xl shadow-slate-200/50 overflow-hidden cursor-pointer"
-            >
-              <div
-                className={`absolute -right-4 -top-4 w-24 h-24 bg-gradient-to-br
-                ${gradients[index % gradients.length]}
-                opacity-10 rounded-full blur-2xl group-hover:opacity-20 transition-opacity`}
-              />
+    {Object.keys(groupedSubjects)
+      .sort((a,b) => a-b)
+      .map((verticalKey) => {
 
-              <div
-                className={`w-14 h-14 rounded-2xl bg-gradient-to-br
-                ${gradients[index % gradients.length]}
-                flex items-center justify-center text-white mb-6 shadow-lg transform group-hover:rotate-6 transition-transform`}
-              >
-                {icon}
-              </div>
+        const verticalSubjects = groupedSubjects[verticalKey];
 
-              <h3 className="text-2xl font-bold text-slate-800 mb-2">
-                {sub.subjectName}
-              </h3>
+        return (
+          <div key={verticalKey}>
 
-              <p className="text-slate-500 text-sm font-medium mb-6">
-                Semester {sub.semester || "-"}
-              </p>
+            {/* Vertical Title */}
+            <h2 className="text-2xl font-bold text-slate-800 mb-6">
+              Vertical {verticalKey}
+            </h2>
 
-              <div className="flex items-center text-sm font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
-                <span>Explore Modules</span>
-                <motion.span
-                  className="ml-2"
-                  animate={{ x: [0, 5, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
+            {/* Subject Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+              {verticalSubjects.map((sub, index) => (
+                <motion.div
+                  key={sub._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ y: -10 }}
+                  className="group relative bg-white border border-slate-100 p-5 rounded-2xl shadow-md hover:shadow-lg transition-all overflow-hidden cursor-pointer"
                 >
-                  →
-                </motion.span>
-              </div>
+                  <div
+                    className={`absolute -right-4 -top-4 w-24 h-24 bg-gradient-to-br
+                    ${gradients[index % gradients.length]}
+                    opacity-10 rounded-full blur-2xl group-hover:opacity-20 transition-opacity`}
+                  />
 
-            </motion.div>
-          ))
-        )}
+                  <div
+                    className={`w-14 h-14 rounded-2xl bg-gradient-to-br
+                    ${gradients[index % gradients.length]}
+                    flex items-center justify-center text-white mb-6 shadow-lg transform group-hover:rotate-6 transition-transform`}
+                  >
+                    {icon}
+                  </div>
 
-      </div>
+                  <h3 className="text-2xl font-bold text-slate-800 mb-2">
+                    {sub.subjectName}
+                  </h3>
+
+                  <p className="text-slate-500 text-sm font-medium mb-6">
+                    Semester {sub.semester || "-"}
+                  </p>
+
+                  <div className="flex items-center text-sm font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
+                    <span>Explore Modules</span>
+                    <motion.span
+                      className="ml-2"
+                      animate={{ x: [0, 5, 0] }}
+                      transition={{ repeat: Infinity, duration: 1.5 }}
+                    >
+                      →
+                    </motion.span>
+                  </div>
+                </motion.div>
+              ))}
+
+            </div>
+
+          </div>
+        );
+      })}
+
+  </div>
+)}
 
     </div>
   );

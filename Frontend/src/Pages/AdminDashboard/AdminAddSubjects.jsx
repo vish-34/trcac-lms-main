@@ -12,7 +12,8 @@ const AdminAddSubjects = () => {
     year: "",
     semester: "",
     courseOrStream: "",
-    subjectName: ""
+    subjectName: "",
+    vertical: ""
 
   });
 
@@ -77,7 +78,7 @@ const AdminAddSubjects = () => {
       !formData.courseOrStream ||
       !formData.subjectName.trim() ||
 
-      (mode === "degree" && !formData.semester)
+      (mode === "degree" && (!formData.semester || !formData.vertical))
 
     ) {
 
@@ -109,7 +110,8 @@ const AdminAddSubjects = () => {
           year: "",
           semester: "",
           courseOrStream: "",
-          subjectName: ""
+          subjectName: "",
+          vertical: ""
 
         });
 
@@ -412,6 +414,21 @@ ${mode === tab ?
 
               </select>
 
+            )}
+
+            {/* VERTICAL (Degree Only) */}
+            {mode === "degree" && (
+              <select
+                name="vertical"
+                value={formData.vertical}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-4 py-3"
+              >
+                <option value="">Select Vertical</option>
+                {[1, 2, 3, 4, 5, 6].map(v => (
+                  <option key={v} value={v}>Vertical {v}</option>
+                ))}
+              </select>
             )}
 
 

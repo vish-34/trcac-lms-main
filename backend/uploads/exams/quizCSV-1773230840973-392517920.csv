@@ -1,0 +1,53 @@
+question,option A,option B,option C,option D,correctAnswer
+What is JVM?,Java Virtual Machine,JavaScript VM,Compiler,Interpreter,A
+React is?,Library,Framework,Language,Database,A
+1. Who is known as the father of computers?,Bill Gates,Charles Babbage,Alan Turing,Steve Jobs, B
+2. What is the full form of CPU?,Central Process Unit,Control Processing Unit,Central Processing Unit,Command Play Unit, C
+3. Which of these is an operating system?,Microsoft Word,Google Chrome,Windows 11,Adobe Photoshop, C
+4. What is the brain of the computer?,RAM,Hard Disk,CPU,Monitor, C
+5. 1 Terabyte (TB) is equal to?,1024 GB,1000 GB,1024 MB,1024 KB, A
+6. Which language is known as a low-level language?,Java,Python,Machine Language,C++, C
+7. What is the full form of RAM?,Read Access Memory,Random Access Memory,Run Applied Memory,Real Access Memory, B
+8. Which of the following is a permanent storage device?,RAM,Cache,Hard Disk,Register, C
+9. What does HTTP stand for?,High Text Transfer Plot,Hypertext Transfer Protocol,Hyperlink Text Transfer,High Tech Trust Protocol, B
+10. Which key is used to refresh a web page?,F2,F5,F10,F12, B
+11. What is the shortcut key for 'Undo'?,Ctrl + Z,Ctrl + Y,Ctrl + U,Ctrl + X, A
+12. Which of these is a 'brain' of the CPU?,ALU,MU,CU,BIOS, A
+13. What is the full form of ROM?,Read Only Memory,Random Only Memory,Read Once Memory,Real Object Memory, A
+14. An IP address is composed of how many bits?,16 bits,32 bits,64 bits,128 bits, B
+15. Which protocol is used to send emails?,FTP,HTTP,SMTP,SNMP, C
+16. What is the extension of a JavaScript file?,.java,.js,.html,.script, B
+17. Which component is used to connect to the Internet?,Sound Card,Graphics Card,Modem,Monitor, C
+18. What is the full form of GUI?,Global User Index,Graphical User Interface,General User Item,Giga User Interface, B
+19. Which of these is an Input device?,Printer,Monitor,Keyboard,Speaker, C
+20. What is the main folder on a storage device called?,Interface,Root Directory,Platform,Device Driver, B
+21. Which error is represented by a 404 code?,Server Error,Forbidden,Page Not Found,Unauthorized, C
+22. What is the full form of PDF?,Print Document File,Portable Document Format,Personal Data File,Portable Data Format, B
+23. Which of these is a NoSQL database?,MySQL,PostgreSQL,MongoDB,Oracle, C
+24. What does BIOS stand for?,Basic Input Output System,Better Input Output System,Binary Input Output System,Board Input Output System, A
+25. Which is the fastest memory in a computer?,RAM,ROM,Cache Memory,Hard Disk, C
+26. Which symbol is used for comments in Python?,//,/* */,#,, C
+27. What is the full form of URL?,Universal Resource Link,Uniform Resource Locator,United Resource Line,Universal Radio Locator, B
+28. Which layer of the OSI model handles routing?,Data Link,Transport,Network,Physical, C
+29. What is a 'Bug' in computer terminology?,A virus,A hardware failure,An error in a program,A magnetic disk, C
+30. Which language is primarily used for Android apps?,Swift,Kotlin,C#,PHP, B
+31. What is the full form of LAN?,Local Area Network,Long Area Network,Local Array Node,Light Area Network, A
+32. Which of these is a CSS framework?,React,Django,Tailwind,Laravel, C
+33. What is the binary equivalent of decimal 2?,1,10,11,100, B
+34. Which device is used for digital-to-analog conversion?,Router,Switch,Modem,Hub, C
+35. What does SQL stand for?,Simple Query Language,Structured Query Language,Standard Query Logic,Serial Query Language, B
+36. Which company developed the Java language?,Microsoft,Google,Sun Microsystems,Apple, C
+37. What is the size of an IPv6 address?,32 bits,64 bits,128 bits,256 bits, C
+38. Which shortcut is used to paste text?,Ctrl + P,Ctrl + C,Ctrl + V,Ctrl + S, C
+39. What is the name of the first electronic computer?,ENIAC,UNIVAC,ABACUS,PASCAL, A
+40. Which port is usually used for HTTP?,21,443,80,25, C
+41. What is the full form of SSD?,Solid State Drive,Super Speed Drive,Soft State Drive,Silver State Drive, A
+42. Which data structure works on LIFO principle?,Queue,Linked List,Stack,Array, C
+43. What is the primary function of a Firewall?,Monitoring,Deleting files,Copying data,Creating backups, A
+44. Who created the Linux Kernel?,Bill Gates,Linus Torvalds,Ken Thompson,Dennis Ritchie, B
+45. What does XML stand for?,Extra Modern Language,Extensible Markup Language,Example Markup Link,X-Linked Markup Language, B
+46. Which of these is a volatile memory?,ROM,PROM,RAM,Hard Disk, C
+47. What is the shortcut to open Task Manager?,Ctrl+Alt+Del,Ctrl+Shift+Esc,Alt+F4,Win+L, B
+48. Which protocol is used for secure browsing?,HTTP,FTP,HTTPS,Telnet, C
+49. What is the physical part of a computer called?,Software,Hardware,Firmware,Middleware, B
+50. Which company owns the Chrome browser?,Microsoft,Meta,Google,Amazon, C

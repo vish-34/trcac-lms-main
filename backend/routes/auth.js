@@ -120,6 +120,17 @@ router.post("/create-user", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // ⭐ Generate semester from year (Degree College students)
+let semester = undefined;
+
+if (role === "student" && college === "Degree College") {
+  const semesterMap = {
+    FY: 1,
+    SY: 3,
+    TY: 5
+  };
+  semester = semesterMap[year] || 1;
+}
     // Generate class name
     let className = "";
 
@@ -141,19 +152,20 @@ router.post("/create-user", async (req, res) => {
       }
     }
 
-    const newUser = new UserModel({
-      fullName: fullName.trim(),
-      email: normalizedEmail,
-      password: hashedPassword,
-      role,
-      college,
-      stream: role === "student" && college === "Junior College" ? degree : undefined,
-      degree: role === "student" && college === "Degree College" ? degree : undefined,
-      year: role === "student" ? year : undefined,
-      class: role === "student" ? className : undefined,
-      course: role === "teacher" ? degree : undefined,
-      subject: role === "teacher" ? degree : undefined
-    });
+   const newUser = new UserModel({
+  fullName: fullName.trim(),
+  email: normalizedEmail,
+  password: hashedPassword,
+  role,
+  college,
+  stream: role === "student" && college === "Junior College" ? degree : undefined,
+  degree: role === "student" && college === "Degree College" ? degree : undefined,
+  year: role === "student" ? year : undefined,
+  semester: role === "student" && college === "Degree College" ? semester : undefined, // ⭐ FIX
+  class: role === "student" ? className : undefined,
+  course: role === "teacher" ? degree : undefined,
+  subject: role === "teacher" ? degree : undefined
+});
 
     await newUser.save();
 
