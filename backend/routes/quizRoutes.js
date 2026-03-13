@@ -84,8 +84,19 @@ router.post("/submit", async (req, res) => {
     const percentage = Math.round((score / total) * 100);
 
     const DCStudent = (await import("../models/DCStudent.js")).default;
-    const student = await DCStudent.findById(studentId);
-    const studentModel = student ? "DCStudent" : "JCStudent";
+    const JCStudent = (await import("../models/JCStudent.js")).default;
+
+    let student = await DCStudent.findById(studentId).select("fullName email rollNo");
+    let studentModel = "DCStudent";
+
+    if (!student) {
+      student = await JCStudent.findById(studentId).select("fullName email rollNo");
+      studentModel = "JCStudent";
+    }
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
 
     // ⭐ CHANGE 3: Update existing attempt instead of creating new one
     existing.answers = answers.map((a, i) => ({
@@ -99,6 +110,9 @@ router.post("/submit", async (req, res) => {
     existing.percentage = percentage;
     existing.status = "completed";
     existing.studentModel = studentModel;
+    existing.studentName = student.fullName;
+    existing.studentEmail = student.email;
+    existing.studentRollNo = student.rollNo;
     existing.submittedAt = new Date();
 
     await existing.save();
@@ -122,9 +136,9 @@ router.get("/results/:examId", async (req, res) => {
     })
       .populate({
         path: "studentId",
-        select: "fullName email class",
+        select: "fullName email rollNo class",
       })
-      .sort({ score: -1 });
+      .sort({ score: -1, submittedAt: 1 });
 
     res.json(attempts);
   } catch (err) {

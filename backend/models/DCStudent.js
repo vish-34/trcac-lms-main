@@ -17,6 +17,12 @@ const DCStudentSchema = new mongoose.Schema({
     required: true
   },
 
+  rollNo: {
+    type: String,
+    required: true,
+    trim: true
+  },
+
   degree: {
     type: String,
     required: true,

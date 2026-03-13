@@ -23,6 +23,7 @@ export default function AdminCreateUser() {
     password: "",
     role: "student",
     college: "Degree College",
+    rollNo: "",
     degree: "",
     year: ""
   });
@@ -63,10 +64,16 @@ export default function AdminCreateUser() {
         return;
       }
 
+      if (formData.role === "student" && !formData.rollNo.trim()) {
+        setError("Roll number is required.");
+        return;
+      }
+
       const payload = {
         ...formData,
         fullName: formData.fullName.trim(),
-        email: formData.email.trim().toLowerCase()
+        email: formData.email.trim().toLowerCase(),
+        rollNo: formData.role === "student" ? formData.rollNo.trim() : ""
       };
 
       const response = await fetch(
@@ -95,6 +102,7 @@ export default function AdminCreateUser() {
           password: "",
           role: "student",
           college: "Degree College",
+          rollNo: "",
           degree: "",
           year: ""
         });
@@ -217,6 +225,17 @@ export default function AdminCreateUser() {
             <option value="Degree College">Degree College</option>
             <option value="Junior College">Junior College</option>
           </select>
+
+          {formData.role === "student" && (
+            <input
+              name="rollNo"
+              placeholder="Roll Number"
+              value={formData.rollNo}
+              required
+              onChange={handleChange}
+              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500"
+            />
+          )}
 
           {/* DEGREE / STREAM */}
           {formData.role === "student" && (

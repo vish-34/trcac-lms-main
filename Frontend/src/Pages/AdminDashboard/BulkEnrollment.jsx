@@ -13,10 +13,17 @@ const BulkEnrollment = () => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
+  const isCsvFile = (file) => {
+    if (!file) return false;
+
+    const fileName = file.name?.toLowerCase() || '';
+    return fileName.endsWith('.csv') || file.type === 'text/csv' || file.type === 'text/plain';
+  };
+
   // Handle file upload
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
-    if (file && file.type === 'text/csv') {
+    if (isCsvFile(file)) {
       setCsvFile(file);
       setErrors([]);
     } else {
@@ -43,7 +50,7 @@ const BulkEnrollment = () => {
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       const file = files[0];
-      if (file.type === 'text/csv') {
+      if (isCsvFile(file)) {
         setCsvFile(file);
         setErrors([]);
       } else {
@@ -143,8 +150,8 @@ const BulkEnrollment = () => {
       const template = response.data;
       const csvContent = userType === 'student' 
         ? collegeType === 'degree'
-          ? `fullName,email,degree,year,collegeType\n${template.studentTemplate.fullName},${template.studentTemplate.email},${template.studentTemplate.degree},${template.studentTemplate.year},${collegeType}`
-          : `fullName,email,stream,year,collegeType\n${template.studentTemplate.fullName},${template.studentTemplate.email},${template.studentTemplate.stream || 'Commerce'},${template.studentTemplate.year},${collegeType}`
+          ? `fullName,email,rollNo,degree,year,collegeType\n${template.studentTemplate.fullName},${template.studentTemplate.email},${template.studentTemplate.rollNo},${template.studentTemplate.degree},${template.studentTemplate.year},${collegeType}`
+          : `fullName,email,rollNo,stream,year,collegeType\n${template.studentTemplate.fullName},${template.studentTemplate.email},${template.studentTemplate.rollNo},${template.studentTemplate.stream || 'Commerce'},${template.studentTemplate.year},${collegeType}`
         : `fullName,email,subjects,employeeId,collegeType\n${template.teacherTemplate.fullName},${template.teacherTemplate.email},${template.teacherTemplate.subjects},${template.teacherTemplate.employeeId},${collegeType}`;
 
       console.log('Generated CSV content:', csvContent);
@@ -336,8 +343,8 @@ const BulkEnrollment = () => {
                   <p className="mb-2">
                     {userType === 'student' 
                       ? collegeType === 'degree'
-                        ? `Required columns: fullName, email, degree, year, collegeType (${collegeType})`
-                        : `Required columns: fullName, email, stream, year, collegeType (${collegeType})`
+                        ? `Required columns: fullName, email, rollNo, degree, year, collegeType (${collegeType})`
+                        : `Required columns: fullName, email, rollNo, stream, year, collegeType (${collegeType})`
                       : `Required columns: fullName, email, subjects, employeeId, collegeType (${collegeType})`
                     }
                   </p>
@@ -432,6 +439,11 @@ const BulkEnrollment = () => {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Email
                           </th>
+                          {userType === 'student' && (
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Roll No
+                            </th>
+                          )}
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Password
                           </th>
@@ -449,6 +461,11 @@ const BulkEnrollment = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {user.email}
                             </td>
+                            {userType === 'student' && (
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {user.rollNo || '-'}
+                              </td>
+                            )}
                             <td className="px-6 py-4 whitespace-nowrap text-sm">
                               <span className="font-mono bg-yellow-100 px-3 py-1 rounded-md border border-yellow-300">
                                 {user.password}

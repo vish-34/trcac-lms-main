@@ -97,12 +97,14 @@ export default function SubjectSlider() {
     "from-indigo-500 to-violet-500"
   ];
 
-  const groupedSubjects = subjects.reduce((acc, subject) => {
-  const v = Number(subject.vertical);
-  if (!acc[v]) acc[v] = [];
-  acc[v].push(subject);
-  return acc;
-}, {});
+  const groupedSubjects = [1, 2, 3, 4, 5, 6]
+    .map((verticalNumber) => ({
+      verticalNumber,
+      subjects: subjects
+        .filter((subject) => Number(subject.vertical) === verticalNumber)
+        .sort((a, b) => a.subjectName.localeCompare(b.subjectName))
+    }))
+    .filter((section) => section.subjects.length > 0);
 
   return (
     <div className="py-10 px-4 max-w-6xl mx-auto">
@@ -142,18 +144,14 @@ export default function SubjectSlider() {
 ) : (
   <div className="space-y-12">
 
-    {Object.keys(groupedSubjects)
-      .sort((a,b) => a-b)
-      .map((verticalKey) => {
-
-        const verticalSubjects = groupedSubjects[verticalKey];
+    {groupedSubjects.map(({ verticalNumber, subjects: verticalSubjects }) => {
 
         return (
-          <div key={verticalKey}>
+          <div key={verticalNumber}>
 
             {/* Vertical Title */}
-            <h2 className="text-2xl font-bold text-slate-800 mb-6">
-              Vertical {verticalKey}
+            <h2 className="text-2xl font-bold text-slate-800 mb-6 border-b border-slate-200 pb-2">
+              Vertical {verticalNumber}
             </h2>
 
             {/* Subject Cards */}

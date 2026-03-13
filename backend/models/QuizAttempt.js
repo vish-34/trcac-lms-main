@@ -10,6 +10,22 @@ const QuizAttemptSchema = new mongoose.Schema({
     enum: ["DCStudent", "JCStudent"],
   },
 
+  studentName: {
+    type: String,
+    trim: true,
+  },
+
+  studentEmail: {
+    type: String,
+    trim: true,
+    lowercase: true,
+  },
+
+  studentRollNo: {
+    type: String,
+    trim: true,
+  },
+
   examId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Exam",
@@ -32,7 +48,6 @@ const QuizAttemptSchema = new mongoose.Schema({
 ],
 
  score: { type: Number, default: 0 },
-totalQuestions: { type: Number },
 
   totalQuestions: {
     type: Number,

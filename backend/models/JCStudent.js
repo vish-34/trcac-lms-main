@@ -14,6 +14,11 @@ const JCStudentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  rollNo: {
+    type: String,
+    required: true,
+    trim: true
+  },
   stream: {
     type: String,
     required: true,

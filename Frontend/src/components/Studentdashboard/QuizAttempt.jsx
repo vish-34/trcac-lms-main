@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export default function QuizAttempt() {
   const { examId } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [quiz, setQuiz] = useState({ questions: [] });
   const [answers, setAnswers] = useState([]);
@@ -44,13 +45,11 @@ export default function QuizAttempt() {
           examId,
           answers,
           studentId: user.id,
-          studentModel:
-            user.college === "Degree College" ? "DCStudent" : "JCStudent",
         }
       );
 
       alert(`Quiz submitted! Score: ${res.data.score}/${res.data.total}`);
-      window.location.href = "/studentdashboard";
+      navigate("/studentdashboard");
     } catch (err) {
       console.error("Submit Error:", err.response?.data || err.message);
       alert(err.response?.data?.message || "Submission failed");

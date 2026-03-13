@@ -185,9 +185,13 @@ const AppRoutes = () => {
         <Route path="activity" element={<AllActivity />} />
       </Route>
       <Route
-  path="/teacher/quiz-results/:examId"
-  element={<QuizResults />}
-/>
+        path="/teacher/quiz-results/:examId"
+        element={
+          <ProtectedRoute allowedRoles={['teacher']}>
+            <QuizResults />
+          </ProtectedRoute>
+        }
+      />
       
       {/* Admin Dashboard */}
       <Route 

@@ -33,8 +33,7 @@ export default function Sidebar() {
         : "Student";
 
   const displaySemester = user?.semester || "Student";
-
-  const displayDegree = user?.degree || "Student";
+  const displayCourse = user?.degree || user?.stream || "Student";
 
 
   const menuItems = [
@@ -187,9 +186,15 @@ export default function Sidebar() {
 
                 <p className="text-xs font-medium text-indigo-600">
 
-                  SEM {displaySemester} - {displayDegree}
+                  SEM {displaySemester} - {displayCourse}
 
                 </p>
+
+                {user?.rollNo && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    Roll No: {user.rollNo}
+                  </p>
+                )}
 
               </div>
 

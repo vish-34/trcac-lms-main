@@ -6,6 +6,21 @@ import Assignment from "../models/Assignment.js";
 
 const router = express.Router();
 
+const generateClassName = (degree, year) => {
+  const degreeMappings = {
+    "B.Sc (CS)": "BScCS",
+    "BMS": "BMS",
+    "BCom": "BCom",
+    "BAF": "BAF"
+  };
+
+  return year + (degreeMappings[degree] || "");
+};
+
+const generateJCClassName = (stream, year) => {
+  return year + stream;
+};
+
 router.get("/", (req, res) => {
   res.json({ message: "Progress routes working" });
 });
@@ -434,21 +449,6 @@ router.get("/dashboard-stats/:studentId", async (req, res) => {
           });
         }
       }
-      
-      // Helper functions (copied from assignmentRoutes)
-      const generateClassName = (degree, year) => {
-        const degreeMappings = {
-          'B.Sc (CS)': 'BScCS',
-          'BMS': 'BMS',
-          'BCom': 'BCom',
-          'BAF': 'BAF'
-        };
-        return year + (degreeMappings[degree] || '');
-      };
-      
-      const generateJCClassName = (stream, year) => {
-        return year + stream;
-      };
       
       // Get assignments for this student
       const assignments = await Assignment.find({ 

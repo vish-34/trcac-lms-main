@@ -50,13 +50,11 @@ router.post("/register", async (req, res) => {
         role: newAdmin.role
       }
     });
-
   } catch (err) {
     console.error("Register error:", err);
     res.status(500).json({ message: "Server error during registration" });
   }
 });
-
 
 /* ===================================================
    ADMIN CREATE USER
@@ -75,7 +73,7 @@ router.post("/create-user", async (req, res) => {
       return res.status(403).json({ message: "Only admins can create users" });
     }
 
-    const { fullName, email, password, role, college, degree, year } = req.body;
+    const { fullName, email, password, role, college, degree, year, rollNo } = req.body;
 
     if (!fullName || !email || !password || !role || !college) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -83,6 +81,10 @@ router.post("/create-user", async (req, res) => {
 
     if (role === "student" && !year) {
       return res.status(400).json({ message: "Year is required for students" });
+    }
+
+    if (role === "student" && !rollNo?.trim()) {
+      return res.status(400).json({ message: "Roll number is required for students" });
     }
 
     if (role !== "student" && role !== "teacher") {
@@ -120,27 +122,34 @@ router.post("/create-user", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ⭐ Generate semester from year (Degree College students)
-let semester = undefined;
+    let semester;
 
-if (role === "student" && college === "Degree College") {
-  const semesterMap = {
-    FY: 1,
-    SY: 3,
-    TY: 5
-  };
-  semester = semesterMap[year] || 1;
-}
-    // Generate class name
+    if (role === "student" && college === "Degree College") {
+      const semesterMap = {
+        FY: 1,
+        SY: 3,
+        TY: 5
+      };
+      semester = semesterMap[year] || 1;
+    }
+
+    if (role === "student" && college === "Junior College") {
+      const semesterMap = {
+        FY: 1,
+        SY: 2
+      };
+      semester = semesterMap[year] || 1;
+    }
+
     let className = "";
 
     if (role === "student") {
       if (college === "Degree College") {
         const degreeMappings = {
-          'B.Sc (CS)': 'BScCS',
-          'BMS': 'BMS',
-          'BCom': 'BCom',
-          'BAF': 'BAF'
+          "B.Sc (CS)": "BScCS",
+          "BMS": "BMS",
+          "BCom": "BCom",
+          "BAF": "BAF"
         };
 
         const degreeCode = degreeMappings[degree];
@@ -152,20 +161,21 @@ if (role === "student" && college === "Degree College") {
       }
     }
 
-   const newUser = new UserModel({
-  fullName: fullName.trim(),
-  email: normalizedEmail,
-  password: hashedPassword,
-  role,
-  college,
-  stream: role === "student" && college === "Junior College" ? degree : undefined,
-  degree: role === "student" && college === "Degree College" ? degree : undefined,
-  year: role === "student" ? year : undefined,
-  semester: role === "student" && college === "Degree College" ? semester : undefined, // ⭐ FIX
-  class: role === "student" ? className : undefined,
-  course: role === "teacher" ? degree : undefined,
-  subject: role === "teacher" ? degree : undefined
-});
+    const newUser = new UserModel({
+      fullName: fullName.trim(),
+      email: normalizedEmail,
+      password: hashedPassword,
+      role,
+      college,
+      rollNo: role === "student" ? rollNo.trim() : undefined,
+      stream: role === "student" && college === "Junior College" ? degree : undefined,
+      degree: role === "student" && college === "Degree College" ? degree : undefined,
+      year: role === "student" ? year : undefined,
+      semester: role === "student" ? semester : undefined,
+      class: role === "student" ? className : undefined,
+      course: role === "teacher" ? degree : undefined,
+      subject: role === "teacher" ? degree : undefined
+    });
 
     await newUser.save();
 
@@ -177,17 +187,16 @@ if (role === "student" && college === "Degree College") {
         email: newUser.email,
         role: newUser.role,
         college: newUser.college,
+        rollNo: newUser.rollNo,
         degree: newUser.degree,
         stream: newUser.stream
       }
     });
-
   } catch (err) {
     console.error("Create user error:", err);
     res.status(500).json({ message: "Server error during user creation" });
   }
 });
-
 
 /* ===================================================
    LOGIN
@@ -227,7 +236,7 @@ router.post("/login", async (req, res) => {
     }
 
     user.lastLogin = new Date();
-    await user.save();
+    await user.save({ validateBeforeSave: false });
 
     const token = jwt.sign(
       { userId: user._id, role: user.role, userType },
@@ -244,6 +253,7 @@ router.post("/login", async (req, res) => {
         email: user.email,
         role: user.role,
         college: user.college,
+        rollNo: user.rollNo,
         degree: user.degree,
         semester: user.semester,
         stream: user.stream,
@@ -251,13 +261,11 @@ router.post("/login", async (req, res) => {
         userType
       }
     });
-
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ message: "Server error during login" });
   }
 });
-
 
 /* ===================================================
    VERIFY TOKEN
@@ -297,13 +305,13 @@ router.get("/verify", async (req, res) => {
         email: user.email,
         role: user.role,
         college: user.college,
+        rollNo: user.rollNo,
         degree: user.degree,
         semester: user.semester,
         stream: user.stream,
         year: user.year
       }
     });
-
   } catch (err) {
     res.status(401).json({ message: "Token invalid or expired" });
   }

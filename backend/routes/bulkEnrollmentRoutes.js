@@ -122,6 +122,13 @@ router.post("/bulk-enroll", upload.single('file'), async (req, res) => {
                 errors.push(errorMsg);
                 continue;
               }
+
+              if (userType === 'student' && !row.rollNo?.trim()) {
+                const errorMsg = `Row ${i + 1}: Missing rollNo`;
+                console.log('Validation error:', errorMsg);
+                errors.push(errorMsg);
+                continue;
+              }
               
               if (!isValidEmail(row.email)) {
                 const errorMsg = `Row ${i + 1}: Invalid email format - ${row.email}`;
@@ -141,6 +148,7 @@ router.post("/bulk-enroll", upload.single('file'), async (req, res) => {
                 password: hashedPassword,
                 originalPassword: password, // Store original for profile editing
                 role: userType,
+                rollNo: userType === 'student' ? row.rollNo.trim() : undefined,
                 collegeType: collegeType, // Add college type
                 createdAt: new Date(),
                 isActive: true
@@ -273,6 +281,7 @@ router.post("/bulk-enroll", upload.single('file'), async (req, res) => {
               id: u.id,
               fullName: u.fullName,
               email: u.email,
+              rollNo: u.rollNo,
               password: u.originalPassword,
               role: u.role,
               collegeType: u.collegeType
@@ -333,6 +342,11 @@ router.post("/manual-enroll", async (req, res) => {
           errors.push(`User ${i + 1}: Missing fullName or email`);
           continue;
         }
+
+        if (userType === 'student' && !user.rollNo?.trim()) {
+          errors.push(`User ${i + 1}: Missing rollNo`);
+          continue;
+        }
         
         if (!isValidEmail(user.email)) {
           errors.push(`User ${i + 1}: Invalid email format - ${user.email}`);
@@ -349,6 +363,7 @@ router.post("/manual-enroll", async (req, res) => {
           password: hashedPassword,
           originalPassword: password,
           role: userType,
+          rollNo: userType === 'student' ? user.rollNo.trim() : undefined,
           collegeType: collegeType, // Add college type
           createdAt: new Date(),
           isActive: true
@@ -421,6 +436,7 @@ router.post("/manual-enroll", async (req, res) => {
         id: u.id,
         fullName: u.fullName,
         email: u.email,
+        rollNo: u.rollNo,
         password: u.originalPassword,
         role: u.role
       }))
@@ -444,6 +460,7 @@ router.get("/templates", (req, res) => {
     studentTemplate: {
       fullName: "John Doe",
       email: "john.doe@example.com",
+      rollNo: "23CS101",
       degree: "B.Sc (CS)",
       year: "SY",
       stream: "Commerce", // For JC students
@@ -458,8 +475,8 @@ router.get("/templates", (req, res) => {
     },
     csvFormat: {
       students: {
-        degree: "fullName,email,degree,year,collegeType",
-        junior: "fullName,email,stream,year,collegeType"
+        degree: "fullName,email,rollNo,degree,year,collegeType",
+        junior: "fullName,email,rollNo,stream,year,collegeType"
       },
       teachers: "fullName,email,subjects,employeeId,collegeType"
     }

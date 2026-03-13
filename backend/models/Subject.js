@@ -35,11 +35,23 @@ const subjectSchema = new mongoose.Schema(
       trim: true,
     },
 
+    vertical: {
+      type: Number,
+      min: 1,
+      max: 6,
+      default: null,
+    },
+
     courseCredits: {
       type: Number,
       required: true,
       min: 1,
       max: 10,
+    },
+
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   { timestamps: true }

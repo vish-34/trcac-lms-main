@@ -7,8 +7,8 @@ const router = express.Router();
 router.get("/:examId", async (req, res) => {
   try {
     const attempts = await QuizAttempt.find({ examId: req.params.examId })
-      .populate("studentId", "fullName email class")
-      .sort({ score: -1 });
+      .populate("studentId", "fullName email rollNo class")
+      .sort({ score: -1, submittedAt: 1 });
 
     res.json(attempts);
   } catch (err) {
