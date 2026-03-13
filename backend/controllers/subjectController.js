@@ -85,6 +85,8 @@ export const getSubjects = async (req, res) => {
   try {
     const { collegeType, year, semester, courseOrStream, vertical } = req.query;
 
+    console.log('Get Subjects Query Params:', { collegeType, year, semester, courseOrStream, vertical });
+
     if (!collegeType || !year || !courseOrStream) {
       return res.status(400).json({
         success: false,
@@ -95,7 +97,7 @@ export const getSubjects = async (req, res) => {
     let query = {
       collegeType,
       year,
-      courseOrStream,
+      courseOrStream: courseOrStream, 
     };
 
     if (collegeType === "degree") {
@@ -114,7 +116,31 @@ export const getSubjects = async (req, res) => {
       }
     }
 
-    const subjects = await Subject.find(query).sort({ vertical: 1 });
+    console.log('Database Query:', query);
+
+    // Try exact match first
+    let subjects = await Subject.find(query).sort({ vertical: 1 });
+    
+    // If no subjects found, try case-insensitive courseOrStream
+    if (subjects.length === 0) {
+      console.log('No subjects found with exact match, trying case-insensitive courseOrStream');
+      const caseInsensitiveQuery = { ...query };
+      delete caseInsensitiveQuery.courseOrStream;
+      
+      subjects = await Subject.find({
+        ...caseInsensitiveQuery,
+        courseOrStream: { $regex: new RegExp(`^${courseOrStream}$`, 'i') } 
+      }).sort({ vertical: 1 });
+      
+      console.log('Case-insensitive query found:', subjects.length, 'subjects');
+    }
+
+    console.log('Found subjects:', subjects.length);
+    console.log('Subject details:', subjects.map(s => ({
+      subjectName: s.subjectName,
+      semester: s.semester,
+      vertical: s.vertical
+    })));
 
     res.json({
       success: true,

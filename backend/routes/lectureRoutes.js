@@ -213,9 +213,9 @@ router.get("/student/:studentId", async (req, res) => {
   try {
 
     const { studentId } = req.params;
-    const { semester } = req.query;
+    const { semester, subject } = req.query;
 
-    console.log(`📚 Fetching lectures for student: ${studentId}, semester: ${semester}`);
+    console.log(`📚 Fetching lectures for student: ${studentId}, semester: ${semester}, subject: ${subject}`);
 
     let student = await DCStudent.findById(studentId);
 
@@ -236,7 +236,13 @@ router.get("/student/:studentId", async (req, res) => {
       semester: Number(semester)
     };
 
-    console.log(`🔍 Using filter:`, filter);
+    // Add subject filter if provided
+    if (subject && subject.trim() !== "") {
+      filter.subject = subject.trim();
+      console.log(`🎯 Adding subject filter: ${subject}`);
+    }
+
+    console.log(`🔍 Final filter:`, filter);
 
     const lectures = await Lecture.find(filter)
       .select('_id title subject facultyName youtubeLink college year course degree semester createdAt')
@@ -246,9 +252,9 @@ router.get("/student/:studentId", async (req, res) => {
     
     // Log each lecture with its unique ID
     lectures.forEach((lecture, index) => {
-      console.log(`   ${index + 1}. Lecture ID: ${lecture._id}, Title: ${lecture.title}, Subject: ${lecture.subject}`);
+      console.log(`  Lecture ${index + 1}: ID=${lecture._id}, Subject=${lecture.subject}, Title=${lecture.title}`);
     });
-
+    
     res.json(lectures);
 
   } catch (error) {

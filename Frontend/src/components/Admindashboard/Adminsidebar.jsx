@@ -6,7 +6,8 @@ import {
   LogOut,
   UserPlus,
   Menu,
-  X
+  X,
+  BookOpen
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -45,6 +46,12 @@ export default function Adminsidebar() {
       name:"Bulk Enrollment",
       path:"/admindashboard/bulk-enrollment",
       icon:<UserPlus size={20}/>
+    },
+
+    {
+      name:"Bulk Subjects",
+      path:"/admindashboard/bulk-subjects",
+      icon:<BookOpen size={20}/>
     },
 
     {

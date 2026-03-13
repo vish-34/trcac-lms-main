@@ -257,7 +257,7 @@ export default function AdminAddLecture({ onClose }) {
 
             console.log('Lecture created successfully:', response.data);
             
-            setMessage(`Lecture Added Successfully! Lecture ID: ${response.data.lecture._id}`);
+            setMessage(`Lecture Added Successfully!`);
 
             // Store the created lecture info for reference
             if (response.data.lecture) {

@@ -20,6 +20,7 @@ import TeacherDashboard from './Pages/TeacherDashboard/TeacherDashboard.jsx';
 import TeacherHome from './Pages/TeacherDashboard/TeacherHome.jsx';
 import TeacherLectures from './Pages/TeacherDashboard/TeacherLectures.jsx';
 import BulkEnrollment from './Pages/AdminDashboard/BulkEnrollment.jsx';
+import BulkSubjectEnrollment from './Pages/AdminDashboard/BulkSubjectEnrollment.jsx';
 import TeacherAssignment from './Pages/TeacherDashboard/Assignments.jsx';
 import TeacherExams from './Pages/TeacherDashboard/TeacherExams.jsx';
 import AllActivity from './Pages/TeacherDashboard/AllActivity.jsx';
@@ -119,6 +120,16 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <BulkEnrollment />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Bulk Subjects - Admin Only */}
+      <Route 
+        path="/admindashboard/bulk-subjects" 
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <BulkSubjectEnrollment />
           </ProtectedRoute>
         } 
       />

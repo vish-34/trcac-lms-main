@@ -6,7 +6,7 @@ import activityTracker from "../../utils/activityTracker.js";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function Lectures() {
+const Lectures = () => {
 
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -226,11 +226,10 @@ export default function Lectures() {
         
         if (selectedSemester) {
           url += `?semester=${selectedSemester}`;
-          if (selectedSubject) {
-            url += `&subject=${selectedSubject}`;
+          // Only add subject filter if a specific subject is selected (not empty string)
+          if (selectedSubject && selectedSubject.trim() !== "") {
+            url += `&subject=${encodeURIComponent(selectedSubject)}`;
           }
-        } else if (selectedSubject) {
-          url += `?subject=${selectedSubject}`;
         }
 
         const res = await axios.get(url);
@@ -1275,7 +1274,11 @@ export default function Lectures() {
 
 
 
+
+
       {subjects.length > 0 && (
+
+
 
 
 
@@ -1295,17 +1298,15 @@ export default function Lectures() {
 
           }}
 
-          className="border px-4 py-3 rounded-lg mb-8"
+          className="border px-4 py-3 rounded-lg mb-8 w-full md:w-auto"
 
         >
 
           <option value="">
 
-            Select Subject
+            All Subjects
 
           </option>
-
-
 
           {subjects.map(sub => (
 
@@ -1323,9 +1324,9 @@ export default function Lectures() {
 
           ))}
 
-
-
         </select>
+
+
 
 
 
@@ -1333,16 +1334,15 @@ export default function Lectures() {
 
 
 
-    <div className="grid gap-8">
+
+
 
 
 
       {lectures.length === 0 ? (
 
         <p className="text-gray-500">
-
-          Select Semester & Subject
-
+          {selectedSubject ? `No lectures found for ${selectedSubject}` : 'No lectures found for this semester'}
         </p>
 
       ) : (
@@ -1352,142 +1352,144 @@ export default function Lectures() {
           <p className="text-green-600 mb-4">
             Found {lectures.length} lecture(s)
           </p>
-          {lectures.map(lecture => (
-            <div
-              key={lecture._id}
-              className="bg-white shadow rounded-2xl p-6"
-            >
-              <h2 className="font-semibold">
-                {lecture.title}
-              </h2>
-              <p className="text-sm text-gray-500">
-                Faculty : {lecture.facultyName}
-              </p>
-              <div className="relative w-full pt-[56.25%] mt-4">
-                <YouTube
-                  videoId={getVideoId(lecture.youtubeLink)}
-                  opts={{
-                    width: "100%",
-                    height: "100%",
-                    playerVars: {
-                      start:
-                        activeLectureId === lecture._id
-                          ? resumeAtSeconds
-                          : 0
-                    }
-                  }}
-                  className="absolute top-0 left-0 w-full h-full"
-                  iframeClassName="w-full h-full"
-                  onReady={(e) => {
-                    console.log(`Video ready - Lecture ${lecture._id}`);
-                    
-                    // Store player reference
-                    setPlayerRefs(prev => ({
-                      ...prev,
-                      [lecture._id]: e.target
-                    }));
-
-                    // SIMPLE RESUME SYSTEM
-                    if (activeLectureId === lecture._id && resumeAtSeconds > 0) {
-                      console.log(`Resuming lecture ${lecture._id} from ${resumeAtSeconds} seconds`);
-                      
-                      // Simple direct resume
-                      setTimeout(() => {
-                        e.target.seekTo(resumeAtSeconds, true);
-                        console.log(`Resumed at ${resumeAtSeconds}s`);
-                      }, 1000);
-                    }
-
-                    // SIMPLE ANTI-SEEKING SYSTEM
-                    let lastKnownTime = resumeAtSeconds || 0;
-                    let isResuming = true;
-                    
-                    // Resume protection for first 3 seconds
-                    setTimeout(() => {
-                      isResuming = false;
-                      console.log(`🔓 Resume protection ended`);
-                    }, 3000);
-
-                    const preventSeeking = setInterval(async () => {
-                      try {
-                        if (isVideoLocked[lecture._id]) return;
-                        
-                        const currentTime = await e.target.getCurrentTime();
-                        const playerState = await e.target.getPlayerState();
-                        
-                        // Don't check during resume protection
-                        if (isResuming) {
-                          lastKnownTime = currentTime;
-                          return;
-                        }
-                        
-                        // Simple time jump detection
-                        const timeDiff = Math.abs(currentTime - lastKnownTime);
-                        
-                        if (timeDiff > 3 && lastKnownTime > 0) {
-                          console.log(`🚫 Seeking detected! Jump from ${lastKnownTime}s to ${currentTime}s`);
-                          
-                          // Force back to last known position
-                          e.target.seekTo(lastKnownTime, true);
-                          setIsVideoLocked(prev => ({ ...prev, [lecture._id]: true }));
-                          
-                          setTimeout(() => {
-                            setIsVideoLocked(prev => ({ ...prev, [lecture._id]: false }));
-                          }, 2000);
-                          
-                          return;
-                        }
-                        
-                        // Update last known time for legitimate progress
-                        if (currentTime >= lastKnownTime) {
-                          lastKnownTime = currentTime;
-                        }
-                        
-                      } catch (error) {
-                        console.error('Anti-seeking error:', error);
+          <div className="grid gap-8">
+            {lectures.map(lecture => (
+              <div
+                key={lecture._id}
+                className="bg-white shadow rounded-2xl p-6"
+              >
+                <h2 className="font-semibold">
+                  {lecture.title}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Faculty : {lecture.facultyName}
+                </p>
+                <div className="relative w-full pt-[56.25%] mt-4">
+                  <YouTube
+                    videoId={getVideoId(lecture.youtubeLink)}
+                    opts={{
+                      width: "100%",
+                      height: "100%",
+                      playerVars: {
+                        start:
+                          activeLectureId === lecture._id
+                            ? resumeAtSeconds
+                            : 0
                       }
-                    }, 500);
+                    }}
+                    className="absolute top-0 left-0 w-full h-full"
+                    iframeClassName="w-full h-full"
+                    onReady={(e) => {
+                      console.log(`Video ready - Lecture ${lecture._id}`);
+                      
+                      // Store player reference
+                      setPlayerRefs(prev => ({
+                        ...prev,
+                        [lecture._id]: e.target
+                      }));
 
-                    // Store interval for cleanup
-                    e.target.seekingPrevention = preventSeeking;
-                  }}
-                  onStateChange={async (e) => {
-                    console.log(`Video state changed for lecture ${lecture._id}:`, e.data);
-                    
-                    if (e.data === 0 || e.data === 2 || e.data === 1) {
-                      const currentTime = await e.target.getCurrentTime();
-                      const duration = await e.target.getDuration();
+                      // SIMPLE RESUME SYSTEM
+                      if (activeLectureId === lecture._id && resumeAtSeconds > 0) {
+                        console.log(`Resuming lecture ${lecture._id} from ${resumeAtSeconds} seconds`);
+                        
+                        // Simple direct resume
+                        setTimeout(() => {
+                          e.target.seekTo(resumeAtSeconds, true);
+                          console.log(`Resumed at ${resumeAtSeconds}s`);
+                        }, 1000);
+                      }
+
+                      // SIMPLE ANTI-SEEKING SYSTEM
+                      let lastKnownTime = resumeAtSeconds || 0;
+                      let isResuming = true;
                       
-                      console.log(`Saving progress for lecture ${lecture._id}:`, {
-                        currentTime,
-                        duration,
-                        percentage: Math.round((currentTime / duration) * 100),
-                        state: e.data === 0 ? 'ended' : e.data === 2 ? 'paused' : 'playing'
-                      });
+                      // Resume protection for first 3 seconds
+                      setTimeout(() => {
+                        isResuming = false;
+                        console.log(`🔓 Resume protection ended`);
+                      }, 3000);
+
+                      const preventSeeking = setInterval(async () => {
+                        try {
+                          if (isVideoLocked[lecture._id]) return;
+                          
+                          const currentTime = await e.target.getCurrentTime();
+                          const playerState = await e.target.getPlayerState();
+                          
+                          // Don't check during resume protection
+                          if (isResuming) {
+                            lastKnownTime = currentTime;
+                            return;
+                          }
+                          
+                          // Simple time jump detection
+                          const timeDiff = Math.abs(currentTime - lastKnownTime);
+                          
+                          if (timeDiff > 3 && lastKnownTime > 0) {
+                            console.log(`🚫 Seeking detected! Jump from ${lastKnownTime}s to ${currentTime}s`);
+                            
+                            // Force back to last known position
+                            e.target.seekTo(lastKnownTime, true);
+                            setIsVideoLocked(prev => ({ ...prev, [lecture._id]: true }));
+                            
+                            setTimeout(() => {
+                              setIsVideoLocked(prev => ({ ...prev, [lecture._id]: false }));
+                            }, 2000);
+                            
+                            return;
+                          }
+                          
+                          // Update last known time for legitimate progress
+                          if (currentTime >= lastKnownTime) {
+                            lastKnownTime = currentTime;
+                          }
+                          
+                        } catch (error) {
+                          console.error('Anti-seeking error:', error);
+                        }
+                      }, 500);
+
+                      // Store interval for cleanup
+                      e.target.seekingPrevention = preventSeeking;
+                    }}
+                    onStateChange={async (e) => {
+                      console.log(`Video state changed for lecture ${lecture._id}:`, e.data);
                       
-                      await saveProgress({
-                        lectureId: lecture._id,
-                        currentTime,
-                        duration
-                      });
-                      
-                      await activityTracker.trackLectureView(
-                        lecture._id,
-                        lecture.title,
-                        lecture.subject,
-                        currentTime,
-                        duration
-                      );
-                    }
-                  }}
-                />
+                      if (e.data === 0 || e.data === 2 || e.data === 1) {
+                        const currentTime = await e.target.getCurrentTime();
+                        const duration = await e.target.getDuration();
+                        
+                        console.log(`Saving progress for lecture ${lecture._id}:`, {
+                          currentTime,
+                          duration,
+                          percentage: Math.round((currentTime / duration) * 100),
+                          state: e.data === 0 ? 'ended' : e.data === 2 ? 'paused' : 'playing'
+                        });
+                        
+                        await saveProgress({
+                          lectureId: lecture._id,
+                          currentTime,
+                          duration
+                        });
+                        
+                        await activityTracker.trackLectureView(
+                          lecture._id,
+                          lecture.title,
+                          lecture.subject,
+                          currentTime,
+                          duration
+                        );
+                      }
+                    }}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </>
       )}
     </div>
-  </div>
-);
+)
 }
 
+export default Lectures;

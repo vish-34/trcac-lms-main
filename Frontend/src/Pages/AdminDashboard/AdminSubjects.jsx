@@ -52,17 +52,28 @@ export default function AdminSubjects() {
                 };
             }
 
+            console.log('API Parameters:', params);
+            console.log('API URL:', `${import.meta.env.VITE_API_URL}/api/subjects/get-subjects`);
+
             const response = await axios.get(
                 `${import.meta.env.VITE_API_URL}/api/subjects/get-subjects`,
                 { params }
             );
 
+            console.log('API Response:', response.data);
+            console.log('API Response success:', response.data.success);
+            console.log('API Response subjects:', response.data.subjects);
+            console.log('API Response message:', response.data.message);
+
             if (response.data.success) {
                 setSubjects(response.data.subjects);
+            } else {
+                console.log('API returned error:', response.data.message);
             }
 
         } catch (err) {
-            console.log(err);
+            console.log('API Error:', err);
+            console.log('Error response:', err.response?.data);
         } finally {
             setLoading(false);
         }
@@ -72,13 +83,58 @@ export default function AdminSubjects() {
         fetchSubjects();
     }, [mode, degreeYear, semester, course, jcYear, stream]);
 
-    // Group subjects by vertical
-    const groupedSubjects = subjects.reduce((acc, subject) => {
-        const v = Number(subject.vertical);
-        if (!acc[v]) acc[v] = [];
-        acc[v].push(subject);
+    // Group subjects by semester, then by vertical
+    const groupedBySemester = subjects.reduce((acc, subject) => {
+        // Handle semester as both string and number
+        const semester = String(subject.semester || '');
+        if (!semester) {
+            console.log('Subject missing semester:', subject);
+            return acc; // Skip subjects without semester
+        }
+        
+        if (!acc[semester]) acc[semester] = {};
+        
+        // Handle vertical - if missing, assign based on subject type or create groups
+        let verticalKey;
+        if (subject.vertical) {
+            verticalKey = String(subject.vertical);
+        } else {
+            // Organize subjects without vertical by subject type/pattern
+            const subjectName = subject.subjectName || '';
+            if (subjectName.includes('Major') || subjectName.includes('Practical')) {
+                verticalKey = '1'; // Core subjects
+            } else if (subjectName.includes('VSC') || subjectName.includes('SEC')) {
+                verticalKey = '2'; // Skill courses
+            } else if (subjectName.includes('OE')) {
+                verticalKey = '3'; // Open electives
+            } else if (subjectName.includes('AEC') || subjectName.includes('VEC')) {
+                verticalKey = '4'; // Ability enhancement courses
+            } else if (subjectName.includes('CC')) {
+                verticalKey = '5'; // Common courses
+            } else {
+                verticalKey = '6'; // Others
+            }
+        }
+        
+        if (!acc[semester][verticalKey]) acc[semester][verticalKey] = [];
+        
+        acc[semester][verticalKey].push(subject);
         return acc;
     }, {});
+
+    // Get vertical title based on vertical key
+    const getVerticalTitle = (verticalKey) => {
+        const titles = {
+            '1': 'Vertical 1',
+            '2': 'Vertical 2',
+            '3': 'Vertical 3',
+            '4': 'Vertical 4',
+            '5': 'Vertical 5',
+            '6': 'Vertical 6',
+            '7': 'Other Subjects'
+        };
+        return titles[verticalKey] || `Vertical ${verticalKey}`;
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 px-4 sm:px-6 py-10">
@@ -182,41 +238,66 @@ export default function AdminSubjects() {
                                 </button>
                             </div>
 
-                           {loading ? (
-    <p>Loading...</p>
-) : subjects.length === 0 ? (
-    <p className="text-gray-500">No Subjects Found</p>
-) : (
-    <div className="space-y-6">
+                            {loading ? (
+                                <p>Loading...</p>
+                            ) : subjects.length === 0 ? (
+                                <p className="text-gray-500">No Subjects Found</p>
+                            ) : (
+                                <div className="space-y-8">
+                                    {Object.keys(groupedBySemester)
+                                        .sort((a, b) => a - b)   // sort semesters numerically
+                                        .map(semester => (
+                                            <div key={semester} className="border-2 border-indigo-200 rounded-xl p-6">
+                                                {/* Semester Title */}
+                                                <h3 className="text-xl font-bold text-indigo-800 mb-6 pb-3 border-b border-indigo-200">
+                                                    Semester {semester}
+                                                </h3>
 
-        {Object.keys(groupedSubjects)
-            .sort((a, b) => a - b)   // sort verticals numerically
-            .map(v => (
-                <div key={v} className="border rounded-xl p-4">
+                                                {/* Verticals under semester */}
+                                                <div className="space-y-6">
+                                                    {Object.keys(groupedBySemester[semester])
+                                                        .sort((a, b) => a - b)   // sort verticals numerically
+                                                        .map(vertical => (
+                                                            <div key={vertical} className="border rounded-xl p-4 bg-gray-50">
+                                                                {/* Vertical Title */}
+                                                                <h4 className="font-semibold text-lg mb-4 text-indigo-700">
+                                                                    {getVerticalTitle(vertical)}
+                                                                </h4>
 
-                    {/* Vertical Title */}
-                    <h3 className="font-semibold text-lg mb-3 text-indigo-700">
-                        Vertical {v}
-                    </h3>
-
-                    {/* Subjects under vertical */}
-                    <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        {groupedSubjects[v].map(sub => (
-                            <div
-                                key={sub._id}
-                                className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 hover:shadow"
-                            >
-                                {sub.subjectName}
-                            </div>
-                        ))}
-                    </div>
-
-                </div>
-            ))}
-
-    </div>
-)}
-
+                                                                {/* Subjects under vertical */}
+                                                                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                                                    {groupedBySemester[semester][vertical].map(sub => (
+                                                                        <div
+                                                                            key={sub._id}
+                                                                            className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 hover:shadow transition-shadow"
+                                                                        >
+                                                                            <div className="space-y-2">
+                                                                                <div className="flex items-start justify-between">
+                                                                                    <h5 className="font-semibold text-gray-800 text-sm leading-tight">
+                                                                                        {sub.subjectName}
+                                                                                    </h5>
+                                                                                    <span className="bg-indigo-600 text-white text-xs px-2 py-1 rounded-full font-mono">
+                                                                                        {sub.subjectCode}
+                                                                                    </span>
+                                                                                </div>
+                                                                                {sub.courseCredits && (
+                                                                                    <div className="flex items-center text-xs text-gray-600">
+                                                                                        <span className="bg-gray-200 px-2 py-1 rounded">
+                                                                                            {sub.courseCredits} Credits
+                                                                                        </span>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -266,9 +347,25 @@ export default function AdminSubjects() {
                                     subjects.map(sub => (
                                         <div
                                             key={sub._id}
-                                            className="border rounded-xl p-4 hover:shadow"
+                                            className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 hover:shadow transition-shadow"
                                         >
-                                            {sub.subjectName}
+                                            <div className="space-y-2">
+                                                <div className="flex items-start justify-between">
+                                                    <h4 className="font-semibold text-gray-800 text-sm leading-tight">
+                                                        {sub.subjectName}
+                                                    </h4>
+                                                    <span className="bg-indigo-600 text-white text-xs px-2 py-1 rounded-full font-mono">
+                                                        {sub.subjectCode}
+                                                    </span>
+                                                </div>
+                                                {sub.courseCredits && (
+                                                    <div className="flex items-center text-xs text-gray-600">
+                                                        <span className="bg-gray-200 px-2 py-1 rounded">
+                                                            {sub.courseCredits} Credits
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     ))
                                 )}

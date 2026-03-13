@@ -23,29 +23,27 @@ const subjectSchema = new mongoose.Schema(
       required: true,
     },
 
-    vertical: {                     // ✅ NEW FIELD
-      type: Number,
-      required: function () {
-        return this.collegeType === "degree"; 
-      },
-      min: 1,
-      max: 6,
-    },
-
     subjectName: {
       type: String,
       required: true,
       trim: true,
     },
+
+    subjectCode: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    courseCredits: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 10,
+    },
   },
   { timestamps: true }
 );
-
-/*
-  🔥 Compound Unique Index
-  Prevents duplicate subject in same
-  collegeType + year + course
-*/
 
 subjectSchema.index(
   {
@@ -53,8 +51,10 @@ subjectSchema.index(
     year: 1,
     semester: 1,
     courseOrStream: 1,
-    vertical: 1,      // ✅ added
-    subjectName: 1
+    subjectName: 1,
+    subjectCode: 1,
+    vertical: 1,
+    courseCredits: 1,
   },
   { unique: true }
 );
