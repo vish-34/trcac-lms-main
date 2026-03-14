@@ -126,14 +126,16 @@ export default function Sidebar() {
         left-0
         top-0
         w-[280px]
-        h-screen
+        h-[100dvh]
+        md:h-screen
         bg-slate-50
         border-r
         border-slate-200
         flex
         flex-col
-        justify-between
         z-50
+        overflow-y-auto
+        overscroll-contain
         transition-transform
         duration-300
 
@@ -159,7 +161,7 @@ export default function Sidebar() {
 
 
 
-        <div>
+        <div className="flex-1">
 
           {/* USER PROFILE */}
 
@@ -256,7 +258,7 @@ export default function Sidebar() {
 
         {/* LOGOUT */}
 
-        <div className="p-6">
+        <div className="mt-auto p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
 
           <button
 
