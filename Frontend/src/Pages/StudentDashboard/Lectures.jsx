@@ -41,6 +41,14 @@ const Lectures = () => {
   const [totalWatchTime, setTotalWatchTime] = useState({});
   const [isVideoLocked, setIsVideoLocked] = useState({});
 
+  const querypage = (lecture) => {
+    navigate(`/queries?lectureId=${lecture._id}`, {
+      state: {
+        lecture,
+      },
+    });
+  }
+
   // =======================
 
   // SEMESTER OPTIONS
@@ -1483,6 +1491,10 @@ const Lectures = () => {
                     }}
                   />
                 </div>
+                {/* ask a query  */}
+                 <button onClick={() => querypage(lecture)} className="text-indigo-600 hover:text-indigo-800 mt-2 font-medium">
+                        Ask a query 
+                      </button>
               </div>
             ))}
           </div>

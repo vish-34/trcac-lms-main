@@ -1,25 +1,52 @@
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-export default function AdminHome(){
-
+export default function AdminHome() {
   const { user, extractNameFromEmail } = useAuth();
 
-  const displayName = "Admin";
+  const displayName = user?.fullName || (user?.email ? extractNameFromEmail(user.email) : "Admin");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [dashboardData, setDashboardData] = useState({
+    stats: {
+      totalFaculty: 0,
+      totalStudents: 0,
+      avgAttendance: 0,
+      lecturesConducted: 0,
+      lecturesUpdatedToday: 0,
+      assignmentsSubmitted: 0,
+      pendingReviews: 0,
+    },
+    courseOverview: [],
+    alerts: [],
+    recentActivity: [],
+  });
 
+  useEffect(() => {
+    const fetchDashboardSummary = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/dashboard-summary`);
+        setDashboardData(response.data);
+      } catch (fetchError) {
+        console.error("Error fetching admin dashboard summary:", fetchError);
+        setError("Unable to load admin dashboard data right now.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  return(
+    fetchDashboardSummary();
+  }, []);
 
+  return (
     <div className="space-y-8 px-4 sm:px-6 md:px-8 pt-14 md:pt-0">
-
-      {/* HERO */}
-
       <motion.div
-
-        initial={{opacity:0 , y:30}}
-
-        animate={{opacity:1 , y:0}}
-
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
         className="
         bg-indigo-100
         rounded-2xl
@@ -32,41 +59,23 @@ export default function AdminHome(){
         items-center
         text-center sm:text-left
       "
-
       >
-
         <div>
-
           <h1 className="text-xl sm:text-3xl font-semibold leading-tight">
-
-            Welcome back, {displayName} 
-
+            Welcome back, {displayName}
           </h1>
 
           <p className="text-gray-600 mt-2 text-sm sm:text-base">
-
             Manage your faculty, students and administrative activities.
-
           </p>
-
         </div>
 
-
         <img
-
           src="https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"
-
           className="h-20 rounded-full sm:h-28 w-auto shrink-0"
-
           alt="admin illustration"
-
         />
-
       </motion.div>
-
-
-
-      {/* MAIN STATS */}
 
       <div
         className="
@@ -76,20 +85,11 @@ export default function AdminHome(){
         gap-4 sm:gap-5
       "
       >
-
-        <StatCard title="Total Faculty" value="24" color="bg-indigo-100"/>
-
-        <StatCard title="Total Students" value="482" color="bg-purple-100"/>
-
-        <StatCard title="Avg Attendance" value="86%" color="bg-yellow-100"/>
-
-        <StatCard title="Lectures Conducted" value="320" color="bg-green-100"/>
-
+        <StatCard title="Total Faculty" value={dashboardData.stats.totalFaculty} color="bg-indigo-100" loading={loading} />
+        <StatCard title="Total Students" value={dashboardData.stats.totalStudents} color="bg-purple-100" loading={loading} />
+        <StatCard title="Avg Attendance" value={`${dashboardData.stats.avgAttendance}%`} color="bg-yellow-100" loading={loading} />
+        <StatCard title="Lectures Conducted" value={dashboardData.stats.lecturesConducted} color="bg-green-100" loading={loading} />
       </div>
-
-
-
-      {/* SECOND ROW */}
 
       <div
         className="
@@ -100,27 +100,13 @@ export default function AdminHome(){
         gap-4 sm:gap-5
       "
       >
-
-        <StatCard title="Lectures Updated" value="18 Today" color="bg-blue-100"/>
-
-        <StatCard title="Assignments Submitted" value="210" color="bg-pink-100"/>
-
-        <StatCard title="Pending Reviews" value="42" color="bg-red-100"/>
-
+        <StatCard title="Lectures Updated" value={`${dashboardData.stats.lecturesUpdatedToday} Today`} color="bg-blue-100" loading={loading} />
+        <StatCard title="Assignments Submitted" value={dashboardData.stats.assignmentsSubmitted} color="bg-pink-100" loading={loading} />
+        <StatCard title="Pending Reviews" value={dashboardData.stats.pendingReviews} color="bg-red-100" loading={loading} />
       </div>
 
-
-
-      {/* COURSE */}
-
       <div>
-
-        <h2 className="text-lg sm:text-xl font-semibold mb-4">
-
-          Course Overview
-
-        </h2>
-
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">Course Overview</h2>
 
         <div
           className="
@@ -131,175 +117,114 @@ export default function AdminHome(){
           gap-4 sm:gap-5
         "
         >
-
-          <CourseCard course="FYBSc CS" students="160 Students" faculty="6 Faculty"/>
-
-          <CourseCard course="SYBSc CS" students="150 Students" faculty="7 Faculty"/>
-
-          <CourseCard course="TYBSc CS" students="172 Students" faculty="8 Faculty"/>
-
+          {loading ? (
+            [1, 2, 3].map((item) => <CourseCardSkeleton key={item} />)
+          ) : dashboardData.courseOverview.length > 0 ? (
+            dashboardData.courseOverview.map((item) => (
+              <CourseCard
+                key={item.course}
+                course={item.course}
+                students={`${item.students} Students`}
+                faculty={`${item.faculty} Faculty`}
+              />
+            ))
+          ) : (
+            <EmptyState text="No course overview data available yet." />
+          )}
         </div>
-
       </div>
 
-
-
-      {/* ALERTS */}
-
       <div>
-
-        <h2 className="text-lg sm:text-xl font-semibold mb-4">
-
-          Department Alerts
-
-        </h2>
-
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">Department Alerts</h2>
 
         <div className="bg-white shadow rounded-xl p-5 sm:p-6 space-y-3">
-
-          <AlertCard text="Attendance below 75% in SYBSc CS"/>
-
-          <AlertCard text="15 Assignments pending review"/>
-
-          <AlertCard text="DBMS Mid Term scheduled Friday"/>
-
+          {loading ? (
+            [1, 2, 3].map((item) => <RowSkeleton key={item} />)
+          ) : dashboardData.alerts.length > 0 ? (
+            dashboardData.alerts.map((alert) => <AlertCard key={alert} text={alert} />)
+          ) : (
+            <EmptyState text="No department alerts right now." />
+          )}
         </div>
-
       </div>
-
-
-
-      {/* ACTIVITY */}
 
       <div>
-
-        <h2 className="text-lg sm:text-xl font-semibold mb-4">
-
-          Recent Activity
-
-        </h2>
-
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">Recent Activity</h2>
 
         <div className="bg-white rounded-xl shadow p-5 sm:p-6 space-y-3">
-
-          <ActivityCard text="Prof. Sharma uploaded Computer Networks Lecture" time="10 mins ago"/>
-
-          <ActivityCard text="45 students submitted DBMS Assignment" time="1 hour ago"/>
-
-          <ActivityCard text="Attendance marked for FYBSc CS" time="Today"/>
-
-          <ActivityCard text="New lecture updated in Java Programming" time="Yesterday"/>
-
+          {loading ? (
+            [1, 2, 3, 4].map((item) => <RowSkeleton key={item} />)
+          ) : dashboardData.recentActivity.length > 0 ? (
+            dashboardData.recentActivity.map((activity, index) => (
+              <ActivityCard key={`${activity.text}-${index}`} text={activity.text} time={activity.time} />
+            ))
+          ) : (
+            <EmptyState text="No recent activity yet." />
+          )}
         </div>
 
+        {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
       </div>
-
     </div>
-
   );
-
 }
 
-
-/* STAT CARD */
-
-function StatCard({title,value,color}){
-
-  return(
-
+function StatCard({ title, value, color, loading }) {
+  return (
     <div className={`${color} rounded-xl p-4 sm:p-5`}>
+      <p className="text-sm text-gray-600">{title}</p>
 
-      <p className="text-sm text-gray-600">
-
-        {title}
-
-      </p>
-
-      <h2 className="text-lg sm:text-xl font-semibold mt-2">
-
-        {value}
-
-      </h2>
-
+      {loading ? (
+        <div className="h-7 mt-2 rounded bg-white/60 animate-pulse" />
+      ) : (
+        <h2 className="text-lg sm:text-xl font-semibold mt-2">{value}</h2>
+      )}
     </div>
-
   );
-
 }
 
-
-/* COURSE */
-
-function CourseCard({course,students,faculty}){
-
-  return(
-
+function CourseCard({ course, students, faculty }) {
+  return (
     <div className="bg-white shadow rounded-xl p-5 sm:p-6">
-
-      <h3 className="font-semibold text-lg">
-
-        {course}
-
-      </h3>
-
-      <p className="text-gray-500 mt-2">
-
-        {students}
-
-      </p>
-
-      <p className="text-gray-500">
-
-        {faculty}
-
-      </p>
-
+      <h3 className="font-semibold text-lg">{course}</h3>
+      <p className="text-gray-500 mt-2">{students}</p>
+      <p className="text-gray-500">{faculty}</p>
     </div>
-
   );
-
 }
 
-
-/* ALERT */
-
-function AlertCard({text}){
-
-  return(
-
-    <div className="bg-gray-50 rounded-lg p-4">
-
-      {text}
-
+function CourseCardSkeleton() {
+  return (
+    <div className="bg-white shadow rounded-xl p-5 sm:p-6 animate-pulse">
+      <div className="h-6 bg-gray-200 rounded w-1/2" />
+      <div className="h-4 bg-gray-200 rounded w-2/3 mt-4" />
+      <div className="h-4 bg-gray-200 rounded w-1/3 mt-2" />
     </div>
-
   );
-
 }
 
+function AlertCard({ text }) {
+  return <div className="bg-gray-50 rounded-lg p-4">{text}</div>;
+}
 
-/* ACTIVITY */
-
-function ActivityCard({text,time}){
-
-  return(
-
+function ActivityCard({ text, time }) {
+  return (
     <div className="flex flex-col sm:flex-row sm:justify-between border-b pb-2 gap-1">
-
-      <p className="font-medium">
-
-        {text}
-
-      </p>
-
-      <span className="text-sm text-gray-400">
-
-        {time}
-
-      </span>
-
+      <p className="font-medium">{text}</p>
+      <span className="text-sm text-gray-400">{time}</span>
     </div>
-
   );
+}
 
+function EmptyState({ text }) {
+  return <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-500">{text}</div>;
+}
+
+function RowSkeleton() {
+  return (
+    <div className="animate-pulse border-b pb-2">
+      <div className="h-4 bg-gray-200 rounded w-3/4" />
+      <div className="h-3 bg-gray-200 rounded w-1/4 mt-2" />
+    </div>
+  );
 }

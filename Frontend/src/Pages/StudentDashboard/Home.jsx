@@ -38,6 +38,7 @@ export default function Home() {
     subjects: 0,
     subjectsInfo: { semesters: null, college: null }
   });
+  const [queryUpdates, setQueryUpdates] = useState([]);
 
 
 
@@ -140,6 +141,17 @@ export default function Home() {
         } catch (statsError) {
           console.error('Error fetching dashboard statistics:', statsError);
           // Continue with default values if stats fetch fails
+        }
+
+        try {
+          const queryRes = await axios.get(
+            `${import.meta.env.VITE_API_URL}/api/lecture-queries/student/${studentId}/updates`,
+            { params: { limit: 3 } }
+          );
+          setQueryUpdates(queryRes.data || []);
+        } catch (queryError) {
+          console.error('Error fetching query updates:', queryError);
+          setQueryUpdates([]);
         }
 
         // Log the continue learning data
@@ -675,6 +687,71 @@ export default function Home() {
 
         )}
 
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold">Query Updates</h2>
+          <button
+            onClick={() => navigate('/studentdashboard/query-updates')}
+            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+          >
+            View all
+          </button>
+        </div>
+
+        {isLoading ? (
+          <div className="bg-white rounded-xl shadow p-5 sm:p-6">
+            <div className="animate-pulse space-y-3">
+              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-10 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        ) : queryUpdates.length > 0 ? (
+          <div className="grid gap-4">
+            {queryUpdates.map((item) => (
+              <motion.button
+                key={item._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={() => navigate('/studentdashboard/query-updates')}
+                className="bg-white rounded-xl shadow p-5 text-left hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-medium text-gray-900">{item.lectureTitle}</h3>
+                    <p className="text-sm text-gray-500 mt-1">{item.lectureSubject} • {item.teacherName}</p>
+                  </div>
+                  <span
+                    className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                      item.status === "resolved"
+                        ? "bg-green-100 text-green-700"
+                        : item.status === "answered"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {item.status}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-700 mt-3 line-clamp-2">
+                  {item.answer ? item.answer : item.question}
+                </p>
+              </motion.button>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow p-6">
+            <p className="text-sm text-gray-500">No query updates yet. Your lecture doubts and teacher replies will appear here.</p>
+            <button
+              onClick={() => navigate('/studentdashboard/lectures')}
+              className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+            >
+              Go to Lectures
+            </button>
+          </div>
+        )}
       </div>
 
       <SubjectSlider/>

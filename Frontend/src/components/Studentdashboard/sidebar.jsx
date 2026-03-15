@@ -7,7 +7,8 @@ import {
   LogOut,
   Menu,
   X,
-  CheckCircle
+  CheckCircle,
+  MessageSquare
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -72,6 +73,12 @@ export default function Sidebar() {
       name:"Exams",
       path:"/studentdashboard/exams",
       icon:<FileText size={20}/>
+    },
+
+    {
+      name:"Query Updates",
+      path:"/studentdashboard/query-updates",
+      icon:<MessageSquare size={20}/>
     }
 
   ];
@@ -162,6 +169,8 @@ export default function Sidebar() {
 
 
         <div className="flex-1">
+
+          
 
           {/* USER PROFILE */}
 

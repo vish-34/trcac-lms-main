@@ -25,12 +25,14 @@ export default function HomePage() {
     <div className="min-h-screen bg-white flex flex-col">
 
       {/* NAVBAR */}
+      <nav className="flex justify-between items-center px-12 py-4">
 
-      <nav className="flex justify-between items-center px-12 py-6">
-
-        <h1 className="font-semibold text-lg">
-          TRCAC Nexus
-        </h1>
+        <div className="flex items-center gap-3">
+          <img src="/logo.png" className="h-14 w-14 object-contain" alt="TRCAC EduVeda" />
+          <span className="text-2xl font-semibold tracking-tight text-slate-900">
+            TRCAC EduVeda
+          </span>
+        </div>
 
         <div className="flex gap-6 items-center">
 

@@ -289,4 +289,19 @@ router.get("/teacher/:teacherId", async (req, res) => {
 
 });
 
+router.get("/:id", async (req, res) => {
+  try {
+    const lecture = await Lecture.findById(req.params.id);
+
+    if (!lecture) {
+      return res.status(404).json({ message: "Lecture not found" });
+    }
+
+    res.json(lecture);
+  } catch (error) {
+    console.error("Error fetching lecture by id:", error);
+    res.status(500).json({ message: "Error fetching lecture" });
+  }
+});
+
 export default router;

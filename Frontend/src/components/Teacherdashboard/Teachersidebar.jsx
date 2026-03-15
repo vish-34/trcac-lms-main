@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext.jsx";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import queryService from "../../services/queryService.js";
 
 export default function Teachersidebar() {
 
@@ -17,6 +18,7 @@ export default function Teachersidebar() {
   const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
+  const [hasOpenQueries, setHasOpenQueries] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -57,9 +59,41 @@ export default function Teachersidebar() {
     }
   ];
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadQuerySummary = async () => {
+      if (!user?.fullName) {
+        setHasOpenQueries(false);
+        return;
+      }
+
+      try {
+        const summary = await queryService.getTeacherQuerySummary(user.fullName);
+        if (isMounted) {
+          setHasOpenQueries((summary?.totalOpenQueries || 0) > 0);
+        }
+      } catch (error) {
+        console.error("Error loading teacher query summary:", error);
+        if (isMounted) {
+          setHasOpenQueries(false);
+        }
+      }
+    };
+
+    loadQuerySummary();
+    const intervalId = setInterval(loadQuerySummary, 30000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, [user]);
+
   return (
 
     <>
+
 
       {/* MOBILE HAMBURGER */}
 
@@ -145,6 +179,7 @@ export default function Teachersidebar() {
 
         <div className="flex-1">
 
+
           {/* USER PROFILE */}
 
           <div className="p-8">
@@ -214,9 +249,13 @@ export default function Teachersidebar() {
 
                 {item.icon}
 
-                <span className="font-semibold text-sm">
+                <span className="font-semibold text-sm flex items-center gap-2">
 
                   {item.name}
+
+                  {item.path === "/teacherdashboard/lectures" && hasOpenQueries && (
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
+                  )}
 
                 </span>
 

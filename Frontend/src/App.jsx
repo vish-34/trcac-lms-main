@@ -16,6 +16,7 @@ import StudentSubmitAssignment from './Pages/StudentDashboard/SubmitAssignment.j
 import StudentSubjects from './Pages/StudentDashboard/Subjects.jsx';
 import LectureHistory from './Pages/StudentDashboard/LectureHistory.jsx';
 import StudentAttendance from './Pages/StudentDashboard/Attendance.jsx';
+import QueryUpdates from './Pages/StudentDashboard/QueryUpdates.jsx';
 import TeacherDashboard from './Pages/TeacherDashboard/TeacherDashboard.jsx';
 import TeacherHome from './Pages/TeacherDashboard/TeacherHome.jsx';
 import TeacherLectures from './Pages/TeacherDashboard/TeacherLectures.jsx';
@@ -34,6 +35,7 @@ import AdminAddSubjects from './Pages/AdminDashboard/AdminAddSubjects.jsx';
 import Exams from './components/Studentdashboard/Exams.jsx';
 import QuizAttempt from './components/Studentdashboard/QuizAttempt.jsx';
 import QuizResults from './components/Teacherdashboard/QuizResults.jsx';
+import LectureQueries from './Pages/LectureQueries.jsx';
 
 // Navigation Guard Component
 const NavigationGuard = ({ children }) => {
@@ -46,14 +48,14 @@ const NavigationGuard = ({ children }) => {
     if (!loading && isAuthenticated) {
       const currentPath = location.pathname;
       const loginPaths = ['/login', '/admin-login', '/student-teacher-login'];
-      
+
       if (loginPaths.includes(currentPath)) {
         console.log(' NavigationGuard: Redirecting authenticated user from login page');
-        
+
         // Get user info from localStorage or auth context
         const userStr = localStorage.getItem('user');
         const user = userStr ? JSON.parse(userStr) : {};
-        
+
         // Use React Router navigate without replace to allow normal back navigation
         if (user.role === 'admin') {
           navigate('/admindashboard');
@@ -65,6 +67,26 @@ const NavigationGuard = ({ children }) => {
   }, [isAuthenticated, loading, location, navigate]);
 
   return children;
+};
+
+const AppWatermark = () => {
+  const location = useLocation();
+
+  if (location.pathname === "/") {
+    return null;
+  }
+
+  return (
+    <div className="pointer-events-none fixed bottom-4 right-4 z-10 select-none">
+      <div className="rounded-2xl bg-white/45 backdrop-blur-[2px] p-2 shadow-sm">
+        <img
+          src="/logo.png"
+          alt="TRCAC watermark"
+          className="h-16 w-16 sm:h-20 sm:w-20 object-contain opacity-25"
+        />
+      </div>
+    </div>
+  );
 };
 
 // Protected Route Component
@@ -93,50 +115,58 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 // App Routes Component
 const AppRoutes = () => {
   const { user } = useAuth();
-  
+
   return (
     <Routes>
       {/* Landing Page */}
       <Route path="/" element={<HomePage />} />
-      
+
       {/* Login Routes - Protected by NavigationGuard */}
       <Route path="/login" element={<StudentTeacherLogin />} />
       <Route path="/admin-login" element={<AdminLogin />} />
       <Route path="/student-teacher-login" element={<StudentTeacherLogin />} />
-      
+
+        <Route
+          path='/queries'
+          element={
+            <ProtectedRoute allowedRoles={['student', 'teacher']}>
+              <LectureQueries />
+            </ProtectedRoute>
+          }
+        />
       {/* Admin Create User - Admin Only */}
-      <Route 
-        path="/admin-create-user" 
+      <Route
+        path="/admin-create-user"
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <AdminCreateUser />
           </ProtectedRoute>
-        } 
+        }
       />
 
       {/* Bulk Enrollment - Admin Only */}
-      <Route 
-        path="/admindashboard/bulk-enrollment" 
+      <Route
+        path="/admindashboard/bulk-enrollment"
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <BulkEnrollment />
           </ProtectedRoute>
-        } 
+        }
       />
 
       {/* Bulk Subjects - Admin Only */}
-      <Route 
-        path="/admindashboard/bulk-subjects" 
+      <Route
+        path="/admindashboard/bulk-subjects"
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <BulkSubjectEnrollment />
           </ProtectedRoute>
-        } 
+        }
       />
-      
+
       {/* App Route - redirects based on role */}
-      <Route 
-        path="/app" 
+      <Route
+        path="/app"
         element={
           <ProtectedRoute>
             {user?.role === 'teacher' ? (
@@ -145,12 +175,12 @@ const AppRoutes = () => {
               <Navigate to="/studentdashboard" replace />
             )}
           </ProtectedRoute>
-        } 
+        }
       />
-      
+
       {/* Student Dashboard */}
-      <Route 
-        path="/studentdashboard" 
+      <Route
+        path="/studentdashboard"
         element={
           <ProtectedRoute allowedRoles={['student']}>
             <Dashboard />
@@ -165,13 +195,14 @@ const AppRoutes = () => {
         <Route path="exams" element={<Exams />} />
         <Route path="lecture-history" element={<LectureHistory />} />
         <Route path="attendance" element={<StudentAttendance />} />
+        <Route path="query-updates" element={<QueryUpdates />} />
       </Route>
 
       <Route path="/student/quiz/:examId" element={<QuizAttempt />} />
-      
+
       {/* Teacher Dashboard */}
-      <Route 
-        path="/teacherdashboard" 
+      <Route
+        path="/teacherdashboard"
         element={
           <ProtectedRoute allowedRoles={['teacher']}>
             <TeacherDashboard />
@@ -192,10 +223,10 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      
+
       {/* Admin Dashboard */}
-      <Route 
-        path="/admindashboard" 
+      <Route
+        path="/admindashboard"
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <AdminDashboard />
@@ -210,18 +241,21 @@ const AppRoutes = () => {
         <Route path="addlectures" element={<AdminAddLecture />} />
         <Route path="addsubjects" element={<AdminAddSubjects />} />
       </Route>
-      
+
       {/* Catch all route */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
 
+
+
 const App = () => {
   return (
     <Router>
       <AuthProvider>
         <NavigationGuard>
+          <AppWatermark />
           <AppRoutes />
         </NavigationGuard>
       </AuthProvider>

@@ -2,12 +2,24 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useNavigate } from "react-router-dom";
+import queryService from "../../services/queryService.js";
 
 export default function TeacherLectures() {
 
   const { user } = useAuth();
   const [lectures, setLectures] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lecturesWithOpenQueries, setLecturesWithOpenQueries] = useState([]);
+  const navigate = useNavigate();
+
+  const querypage = (lecture) => {
+    navigate(`/queries?lectureId=${lecture._id}`, {
+      state: {
+        lecture,
+      },
+    });
+  }
 
   // Fetch teacher's lectures
   useEffect(() => {
@@ -60,6 +72,39 @@ export default function TeacherLectures() {
 
     fetchTeacherLectures();
   }, [user]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadQuerySummary = async () => {
+      if (!user?.fullName) {
+        setLecturesWithOpenQueries([]);
+        return;
+      }
+
+      try {
+        const summary = await queryService.getTeacherQuerySummary(user.fullName);
+        if (isMounted) {
+          setLecturesWithOpenQueries(summary?.lectureIdsWithOpenQueries || []);
+        }
+      } catch (error) {
+        console.error("Error loading lecture query summary:", error);
+        if (isMounted) {
+          setLecturesWithOpenQueries([]);
+        }
+      }
+    };
+
+    loadQuerySummary();
+    const intervalId = setInterval(loadQuerySummary, 30000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, [user]);
+
+  const hasOpenQuery = (lectureId) => lecturesWithOpenQueries.includes(String(lectureId));
 
   return (
 
@@ -183,8 +228,11 @@ export default function TeacherLectures() {
                       </span>
                     </td>
                     <td className="pr-4">
-                      <button className="text-indigo-600 hover:text-indigo-800 font-medium">
-                        View Details
+                      <button onClick={() => querypage(l)} className="text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center gap-2">
+                        Queries
+                        {hasOpenQuery(l._id) && (
+                          <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
+                        )}
                       </button>
                     </td>
                   </tr>
